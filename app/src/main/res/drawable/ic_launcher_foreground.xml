@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Ценник: намёк на «поштучно» — цена у отдельной вещи. -->
+    <group android:translateX="22" android:translateY="22">
+        <path
+            android:fillColor="#FFFFFF"
+            android:pathData="M36.2,2.5L61.5,2.5A2.5,2.5 0 0 1 64,5L64,30.3A6,6 0 0 1 62.2,34.5L34.5,62.2A6,6 0 0 1 26,62.2L4.3,40.5A6,6 0 0 1 4.3,32L32,4.3A6,6 0 0 1 36.2,2.5ZM50,12A6,6 0 1 0 50,24A6,6 0 0 0 50,12Z" />
+    </group>
+</vector>
