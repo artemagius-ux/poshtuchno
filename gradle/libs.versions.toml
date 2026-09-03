@@ -7,7 +7,9 @@ compileSdk = "36"
 minSdk = "29"
 targetSdk = "36"
 
-composeBom = "2026.08.00"
+# Compose BOM 2026.06.01 — последняя ревизия, совместимая с AGP 8.x / compileSdk 36.
+# BOM 2026.08.00 (Compose 1.12) требует AGP 9.1+ и compileSdk 37.
+composeBom = "2026.06.01"
 coreKtx = "1.17.0"
 activityCompose = "1.11.0"
 lifecycle = "2.9.4"
