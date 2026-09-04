@@ -47,7 +47,7 @@ fun SwipeToDelete(
                         color = MaterialTheme.colorScheme.errorContainer,
                         shape = MaterialTheme.shapes.medium,
                     )
-                    .padding(horizontal = 24.dp),
+                    .padding(horizontal = 28.dp),
                 contentAlignment = alignment,
             ) {
                 Icon(

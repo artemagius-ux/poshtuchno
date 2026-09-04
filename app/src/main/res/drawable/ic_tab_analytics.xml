@@ -1,21 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Вкладка «Аналитика»: столбчатая диаграмма. -->
+<!-- Вкладка «Аналитика»: столбики. Дальние прозрачные, ближние плотные. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="1.7"
-        android:strokeLineCap="round"
-        android:pathData="M3.5,20.5h17" />
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.28"
+        android:pathData="M4.6,13.5A1.1,1.1 0 0,1 5.7,14.6V19.5H3.5V14.6A1.1,1.1 0 0,1 4.6,13.5ZM12,9.4A1.1,1.1 0 0,1 13.1,10.5V19.5H10.9V10.5A1.1,1.1 0 0,1 12,9.4Z" />
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="1.7"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M6.5,20.5v-6M11,20.5V8M15.5,20.5v-8.5M20,20.5V4.5" />
+        android:fillColor="#FF000000"
+        android:pathData="M8.3,11.2A1.1,1.1 0 0,1 9.4,12.3V19.5H7.2V12.3A1.1,1.1 0 0,1 8.3,11.2ZM19.4,4.5A1.1,1.1 0 0,1 20.5,5.6V19.5H18.3V5.6A1.1,1.1 0 0,1 19.4,4.5ZM15.7,7.3A1.1,1.1 0 0,1 16.8,8.4V19.5H14.6V8.4A1.1,1.1 0 0,1 15.7,7.3Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M2.75,19.6H21.25A0.85,0.85 0 0,1 21.25,21.3H2.75A0.85,0.85 0 0,1 2.75,19.6Z" />
 </vector>

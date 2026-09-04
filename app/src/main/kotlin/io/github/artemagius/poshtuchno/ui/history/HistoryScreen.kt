@@ -12,30 +12,30 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.Card
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.R
-import io.github.artemagius.poshtuchno.data.Money
+import io.github.artemagius.poshtuchno.data.ThemeMode
 import io.github.artemagius.poshtuchno.data.db.PurchaseListItem
+import io.github.artemagius.poshtuchno.ui.components.AppCard
 import io.github.artemagius.poshtuchno.ui.components.DayHeader
 import io.github.artemagius.poshtuchno.ui.components.EmptyPlaceholder
 import io.github.artemagius.poshtuchno.ui.components.PurchaseRow
 import io.github.artemagius.poshtuchno.ui.components.SwipeToDelete
+import io.github.artemagius.poshtuchno.ui.money
 import io.github.artemagius.poshtuchno.ui.rememberDateFormatter
-import io.github.artemagius.poshtuchno.ui.titlecaseFirst
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
+import io.github.artemagius.poshtuchno.ui.titlecaseFirst
 import java.time.LocalDate
 
 @Composable
@@ -53,7 +53,7 @@ fun HistoryScreen(
         contentPadding = PaddingValues(
             start = 16.dp,
             end = 16.dp,
-            top = 8.dp + contentPadding.calculateTopPadding(),
+            top = 4.dp + contentPadding.calculateTopPadding(),
             bottom = 24.dp + contentPadding.calculateBottomPadding(),
         ),
         verticalArrangement = Arrangement.spacedBy(8.dp),
@@ -76,7 +76,11 @@ fun HistoryScreen(
                 onValueChange = onQueryChange,
                 placeholder = { Text("Поиск по заметке или категории") },
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.small,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(vertical = 4.dp),
@@ -86,15 +90,20 @@ fun HistoryScreen(
         if (state.groups.isEmpty()) {
             item {
                 EmptyPlaceholder(
+                    illustration = if (state.query.isNotBlank()) {
+                        R.drawable.il_empty_search
+                    } else {
+                        R.drawable.il_empty_receipt
+                    },
                     title = when {
-                        !state.loaded -> "Загрузка…"
+                        !state.loaded -> "Загрузка"
                         state.query.isNotBlank() -> "Ничего не нашлось"
                         else -> "В этом месяце трат нет"
                     },
-                    subtitle = if (state.query.isBlank() && state.loaded) {
-                        "Переключи месяц или добавь трату"
-                    } else {
-                        null
+                    subtitle = when {
+                        !state.loaded -> null
+                        state.query.isNotBlank() -> "Попробуй другое слово"
+                        else -> "Переключи месяц или добавь трату"
                     },
                 )
             }
@@ -106,23 +115,12 @@ fun HistoryScreen(
                             .format(group.date)
                             .titlecaseFirst(),
                         totalKopecks = group.totalKopecks,
-                        modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
+                        modifier = Modifier.padding(top = 14.dp, bottom = 2.dp),
                     )
                 }
-                items(
-                    items = group.purchases,
-                    key = { purchase -> purchase.id },
-                ) { purchase ->
+                items(items = group.purchases, key = { it.id }) { purchase ->
                     SwipeToDelete(onDelete = { onDeletePurchase(purchase.id) }) {
-                        PurchaseRow(
-                            purchase = purchase,
-                            accent = purchase.topCategoryColorArgb
-                                ?.takeIf { it != 0 }
-                                ?.let { Color(it) }
-                                ?: MaterialTheme.colorScheme.primary,
-                            icon = purchase.topCategoryIcon,
-                            showDate = false,
-                        )
+                        PurchaseRow(purchase = purchase, showDate = false)
                     }
                 }
             }
@@ -140,11 +138,9 @@ private fun MonthSwitcher(
     onPrevious: () -> Unit,
     onNext: () -> Unit,
 ) {
-    Card(modifier = Modifier.fillMaxWidth()) {
+    AppCard(modifier = Modifier.fillMaxWidth(), contentPadding = 8.dp) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = onPrevious, enabled = canGoBack) {
@@ -158,13 +154,14 @@ private fun MonthSwitcher(
                 modifier = Modifier.weight(1f),
                 horizontalAlignment = Alignment.CenterHorizontally,
             ) {
-                Text(text = title, style = MaterialTheme.typography.titleMedium)
-                Spacer(Modifier.height(2.dp))
                 Text(
-                    text = Money.format(totalKopecks),
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
+                    text = title,
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
+                Spacer(Modifier.height(2.dp))
+                Text(text = money(totalKopecks), style = MaterialTheme.typography.displaySmall)
+                Spacer(Modifier.height(2.dp))
                 Text(
                     text = purchaseCountText(purchaseCount),
                     style = MaterialTheme.typography.labelSmall,
@@ -199,19 +196,19 @@ internal fun purchaseCountText(count: Int): String {
 @Composable
 private fun HistoryPreview() {
     val now = System.currentTimeMillis()
-    PoshtuchnoTheme(dynamicColor = false) {
+    PoshtuchnoTheme(themeMode = ThemeMode.Light) {
         HistoryScreen(
             state = HistoryUiState(
                 monthTitle = "Сентябрь",
-                monthTotalKopecks = 1_428_50,
+                monthTotalKopecks = 1_782_000,
                 purchaseCount = 3,
                 groups = listOf(
                     DayGroup(
                         date = LocalDate.now(),
                         totalKopecks = 54_250,
                         purchases = listOf(
-                            PurchaseListItem(1, now, 42_350, "Пятёрочка", null, 4, "Продукты", "cart", 0xFF43A047.toInt()),
-                            PurchaseListItem(2, now, 11_900, "Энергетик", null, 1, "Продукты", "cart", 0xFF43A047.toInt()),
+                            PurchaseListItem(1, now, 42_350, "Пятёрочка", null, 4, "Продукты", "cart", 0),
+                            PurchaseListItem(2, now, 11_900, "Энергетик", null, 1, "Продукты", "cart", 0),
                         ),
                     ),
                 ),

@@ -3,6 +3,7 @@ package io.github.artemagius.poshtuchno.ui.components
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -26,7 +27,7 @@ fun MonthLimitDialog(
         mutableStateOf(
             currentLimitKopecks
                 ?.takeIf { it > 0 }
-                ?.let { Money.format(it, withCurrency = false) }
+                ?.let { Money.format(it, withCurrency = false, showKopecks = true) }
                 .orEmpty(),
         )
     }
@@ -54,6 +55,7 @@ fun MonthLimitDialog(
                             },
                         )
                     },
+                    shape = MaterialTheme.shapes.small,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Decimal,
                         imeAction = ImeAction.Done,

@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -18,28 +20,60 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.ui.CategoryIcons
 
-/** Круглая иконка категории на цветном фоне. */
+/**
+ * Единая карточка приложения: один радиус, одна тень, один фон.
+ * Все экраны используют её, чтобы не появилось смеси плоских и поднятых блоков.
+ */
+@Composable
+fun AppCard(
+    modifier: Modifier = Modifier,
+    contentPadding: Dp = 20.dp,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit,
+) {
+    Card(
+        modifier = modifier,
+        shape = MaterialTheme.shapes.medium,
+        colors = CardDefaults.elevatedCardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(contentPadding),
+            content = content,
+        )
+    }
+}
+
+/**
+ * Иконка категории в duotone-стиле на мягкой подложке.
+ * Цвет один для всех категорий — из акцентного семейства темы.
+ */
 @Composable
 fun CategoryAvatar(
     icon: String?,
-    tint: Color,
     modifier: Modifier = Modifier,
-    size: androidx.compose.ui.unit.Dp = 40.dp,
+    tint: Color = MaterialTheme.colorScheme.primary,
+    container: Color = MaterialTheme.colorScheme.primaryContainer,
+    size: Dp = 44.dp,
 ) {
     Box(
         modifier = modifier
             .size(size)
-            .background(color = tint.copy(alpha = 0.16f), shape = CircleShape),
+            .background(color = container, shape = CircleShape),
         contentAlignment = Alignment.Center,
     ) {
         Icon(
             painter = painterResource(CategoryIcons[icon]),
             contentDescription = null,
             tint = tint,
-            modifier = Modifier.size(size * 0.55f),
+            modifier = Modifier.size(size * 0.52f),
         )
     }
 }
@@ -54,21 +88,19 @@ fun SectionHeader(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(top = 4.dp, bottom = 2.dp),
+            .padding(start = 4.dp, end = 4.dp, top = 12.dp, bottom = 4.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
     ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.titleMedium,
-        )
+        Text(text = title, style = MaterialTheme.typography.titleSmall)
         action?.invoke()
     }
 }
 
-/** Заглушка для пустых экранов и секций. */
+/** Пустое состояние с минималистичной иллюстрацией. */
 @Composable
 fun EmptyPlaceholder(
+    illustration: Int,
     title: String,
     modifier: Modifier = Modifier,
     subtitle: String? = null,
@@ -76,13 +108,21 @@ fun EmptyPlaceholder(
     Column(
         modifier = modifier
             .fillMaxWidth()
-            .padding(vertical = 40.dp, horizontal = 24.dp),
+            .padding(vertical = 32.dp, horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(6.dp),
+        verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
+        Icon(
+            painter = painterResource(illustration),
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier
+                .size(104.dp)
+                .padding(bottom = 8.dp),
+        )
         Text(
             text = title,
-            style = MaterialTheme.typography.titleMedium,
+            style = MaterialTheme.typography.titleSmall,
             textAlign = TextAlign.Center,
         )
         if (subtitle != null) {

@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Пустое состояние поиска: лупа. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <path
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.10"
+        android:pathData="M60,12A48,48 0 1,0 60.01,12Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.30"
+        android:pathData="M54,34A22,22 0 1,0 54.01,34ZM54,42A14,14 0 1,1 53.99,42Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M70.6,68.8L84.4,82.6A3.5,3.5 0 0,1 79.4,87.6L65.6,73.8A3.5,3.5 0 0,1 70.6,68.8Z" />
+</vector>

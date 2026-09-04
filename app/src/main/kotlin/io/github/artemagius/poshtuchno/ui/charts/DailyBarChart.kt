@@ -32,6 +32,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.data.DayAmount
 import io.github.artemagius.poshtuchno.data.Money
+import io.github.artemagius.poshtuchno.data.ThemeMode
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 import java.time.LocalDate
 
@@ -197,7 +198,7 @@ private fun BarsPreview() {
     val days = (0..29).map {
         DayAmount(base.plusDays(it.toLong()), if (it % 4 == 0) 0 else (30_000L + it * 4_500))
     }
-    PoshtuchnoTheme(dynamicColor = false) {
+    PoshtuchnoTheme(themeMode = ThemeMode.Light) {
         Column(Modifier.padding(16.dp)) {
             Text("Траты по дням", fontWeight = FontWeight.SemiBold)
             DailyBarChart(

@@ -27,10 +27,12 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.data.Money
+import io.github.artemagius.poshtuchno.data.ThemeMode
+import io.github.artemagius.poshtuchno.ui.money
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 
 data class DonutSlice(
@@ -58,7 +60,7 @@ fun DonutChart(
         animationSpec = tween(durationMillis = 550),
         label = "donut",
     )
-    val trackColor = MaterialTheme.colorScheme.surfaceVariant
+    val trackColor = MaterialTheme.colorScheme.surfaceContainerHigh
     val description = donutDescription(slices, totalKopecks)
 
     Box(
@@ -68,7 +70,7 @@ fun DonutChart(
         Canvas(modifier = Modifier.fillMaxSize()) {
             // Кольцо всегда круглое: берём наименьшую сторону и центруем.
             val diameter = size.minDimension
-            val strokeWidth = diameter * 0.155f
+            val strokeWidth = diameter * 0.14f
             val arcSide = diameter - strokeWidth
             val topLeft = Offset(
                 x = (size.width - arcSide) / 2f,
@@ -86,7 +88,6 @@ fun DonutChart(
                 style = Stroke(width = strokeWidth, cap = StrokeCap.Butt),
             )
 
-            // Небольшой зазор между сегментами читается лучше, чем сплошное кольцо.
             val gap = if (slices.size > 1) 3f else 0f
             var startAngle = -90f
             slices.forEach { slice ->
@@ -108,13 +109,12 @@ fun DonutChart(
 
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(
-                text = Money.format(totalKopecks),
+                text = money(totalKopecks),
                 style = MaterialTheme.typography.titleLarge,
-                fontWeight = FontWeight.Bold,
             )
             Text(
                 text = centerLabel,
-                style = MaterialTheme.typography.labelMedium,
+                style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -138,32 +138,33 @@ fun DonutLegend(
 ) {
     Column(
         modifier = modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         slices.forEachIndexed { index, slice ->
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(
                     modifier = Modifier
-                        .size(12.dp)
+                        .size(10.dp)
                         .background(color = slice.color, shape = CircleShape),
                 )
                 Text(
                     text = slice.label,
                     style = MaterialTheme.typography.bodyMedium,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                     modifier = Modifier
-                        .padding(start = 10.dp)
+                        .padding(start = 12.dp)
                         .weight(1f),
                 )
                 Text(
                     text = "${shares.getOrNull(index) ?: 0}%",
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(end = 10.dp),
+                    modifier = Modifier.padding(end = 12.dp),
                 )
                 Text(
-                    text = Money.format(slice.amountKopecks),
+                    text = money(slice.amountKopecks),
                     style = MaterialTheme.typography.bodyMedium,
-                    fontWeight = FontWeight.Medium,
                 )
             }
         }
@@ -173,13 +174,13 @@ fun DonutLegend(
 @Preview(showBackground = true)
 @Composable
 private fun DonutPreview() {
-    PoshtuchnoTheme(dynamicColor = false) {
+    PoshtuchnoTheme(themeMode = ThemeMode.Light) {
         Column(Modifier.padding(16.dp)) {
             DonutChart(
                 slices = listOf(
-                    DonutSlice("Продукты", 430_000, Color(0xFF00A88B)),
-                    DonutSlice("Кафе", 180_000, Color(0xFFFF8A3D)),
-                    DonutSlice("Транспорт", 90_000, Color(0xFF4C7FF0)),
+                    DonutSlice("Продукты", 430_000, Color(0xFF6750A4)),
+                    DonutSlice("Кафе", 180_000, Color(0xFF9A82DB)),
+                    DonutSlice("Транспорт", 90_000, Color(0xFFC5B4F0)),
                 ),
                 totalKopecks = 700_000,
                 modifier = Modifier.height(180.dp),

@@ -2,17 +2,14 @@ package io.github.artemagius.poshtuchno.ui.quickadd
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
@@ -24,10 +21,10 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -36,6 +33,7 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.data.Money
+import io.github.artemagius.poshtuchno.data.ThemeMode
 import io.github.artemagius.poshtuchno.data.db.CategoryEntity
 import io.github.artemagius.poshtuchno.ui.CategoryIcons
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
@@ -43,8 +41,10 @@ import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 /**
  * Лист быстрого ввода: сумма своей клавиатурой, категория одним тапом, заметка по желанию.
  *
- * Своя клавиатура, а не системная, по двум причинам: сумма — единственное
- * обязательное поле, и кнопка «Сохранить» должна быть под большим пальцем.
+ * Содержимое умышленно не обёрнуто в verticalScroll: вертикальная прокрутка внутри
+ * bottom sheet конфликтует с его же жестом перетаскивания, и лист начинает
+ * дёргаться вверх-вниз, особенно когда открывается клавиатура. Поэтому набор
+ * помещается целиком, а категории прокручиваются горизонтально.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,15 +62,18 @@ fun QuickAddSheet(
     onSave: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = sheetState) {
+    ModalBottomSheet(
+        onDismissRequest = onDismiss,
+        sheetState = sheetState,
+        shape = MaterialTheme.shapes.extraLarge,
+        containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+    ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 660.dp)
-                .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 24.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp),
+                .padding(bottom = 20.dp),
+            verticalArrangement = Arrangement.spacedBy(14.dp),
         ) {
             AmountDisplay(amount)
 
@@ -85,10 +88,13 @@ fun QuickAddSheet(
             OutlinedTextField(
                 value = note,
                 onValueChange = onNoteChange,
-                label = { Text("Заметка") },
-                placeholder = { Text("Необязательно") },
+                placeholder = { Text("Заметка (необязательно)") },
                 singleLine = true,
-                shape = MaterialTheme.shapes.medium,
+                shape = MaterialTheme.shapes.small,
+                colors = TextFieldDefaults.colors(
+                    unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    focusedContainerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -104,7 +110,7 @@ fun QuickAddSheet(
                 shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(56.dp),
+                    .height(54.dp),
             ) {
                 Text("Сохранить", style = MaterialTheme.typography.titleMedium)
             }
@@ -115,9 +121,7 @@ fun QuickAddSheet(
 @Composable
 private fun AmountDisplay(amount: AmountInput) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(top = 4.dp),
+        modifier = Modifier.fillMaxWidth(),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
         Text(
@@ -131,12 +135,14 @@ private fun AmountDisplay(amount: AmountInput) {
             color = if (amount.hasValue) {
                 MaterialTheme.colorScheme.onSurface
             } else {
-                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.45f)
             },
             // Экранный ридер должен произносить сумму целиком, а не по символам.
-            modifier = Modifier.clearAndSetSemantics {
-                contentDescription = "Сумма: ${Money.format(amount.kopecks)}"
-            },
+            modifier = Modifier
+                .padding(top = 2.dp)
+                .clearAndSetSemantics {
+                    contentDescription = "Сумма: ${Money.format(amount.kopecks)}"
+                },
         )
     }
 }
@@ -147,24 +153,21 @@ private fun CategoryChips(
     selectedCategoryId: Long?,
     onCategorySelect: (Long) -> Unit,
 ) {
-    FlowRow(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalArrangement = Arrangement.spacedBy(8.dp),
-    ) {
-        categories.forEach { category ->
-            val accent = category.colorArgb.takeIf { it != 0 }?.let { Color(it) }
-                ?: MaterialTheme.colorScheme.primary
+    // Горизонтальная прокрутка: она не спорит с вертикальным жестом листа.
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        items(categories, key = { it.id }) { category ->
             FilterChip(
                 selected = category.id == selectedCategoryId,
                 onClick = { onCategorySelect(category.id) },
                 label = { Text(category.name) },
                 shape = MaterialTheme.shapes.small,
                 colors = FilterChipDefaults.filterChipColors(
-                    selectedContainerColor = accent.copy(alpha = 0.18f),
-                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
-                    selectedLeadingIconColor = accent,
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
                 ),
+                border = null,
                 leadingIcon = {
                     Icon(
                         painter = painterResource(CategoryIcons[category.icon]),
@@ -223,9 +226,9 @@ private fun PadButton(
 ) {
     FilledTonalButton(
         onClick = onClick,
-        shape = MaterialTheme.shapes.medium,
+        shape = MaterialTheme.shapes.small,
         modifier = modifier
-            .height(58.dp)
+            .height(52.dp)
             .then(
                 if (description != null) {
                     Modifier.clearAndSetSemantics { contentDescription = description }
@@ -234,7 +237,7 @@ private fun PadButton(
                 },
             ),
     ) {
-        Text(text = label, style = MaterialTheme.typography.headlineSmall)
+        Text(text = label, style = MaterialTheme.typography.titleLarge)
     }
 }
 
@@ -244,12 +247,11 @@ private fun QuickAddContentPreview(amount: AmountInput, categories: List<Categor
         modifier = Modifier
             .fillMaxWidth()
             .padding(20.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
+        verticalArrangement = Arrangement.spacedBy(14.dp),
     ) {
         AmountDisplay(amount)
         CategoryChips(categories, categories.firstOrNull()?.id) {}
         NumberPad({}, {}, {})
-        Spacer(Modifier.size(4.dp))
         Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Сохранить") }
     }
 }
@@ -257,7 +259,7 @@ private fun QuickAddContentPreview(amount: AmountInput, categories: List<Categor
 @Preview(showBackground = true)
 @Composable
 private fun QuickAddPreview() {
-    PoshtuchnoTheme(dynamicColor = false) {
+    PoshtuchnoTheme(themeMode = ThemeMode.Light) {
         QuickAddContentPreview(
             amount = AmountInput(digits = "1428", fraction = "50"),
             categories = listOf(

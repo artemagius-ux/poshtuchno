@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Пустое состояние «трат нет»: чек с оторванным краем.
+  Рисуется в тонах акцента через tint у Image/Icon, поэтому цвета здесь
+  задаются одним чёрным с разной прозрачностью.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="120dp"
+    android:height="120dp"
+    android:viewportWidth="120"
+    android:viewportHeight="120">
+    <!-- Подложка-круг -->
+    <path
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.10"
+        android:pathData="M60,12A48,48 0 1,0 60.01,12Z" />
+    <!-- Лист чека с зубчатым низом -->
+    <path
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.30"
+        android:pathData="M40,32H80V82L74,77L68,82L62,77L56,82L50,77L44,82L40,78Z" />
+    <!-- Строки -->
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M48,44H72A2,2 0 0,1 72,48H48A2,2 0 0,1 48,44ZM48,54H66A2,2 0 0,1 66,58H48A2,2 0 0,1 48,54ZM48,64H70A2,2 0 0,1 70,68H48A2,2 0 0,1 48,64Z" />
+</vector>

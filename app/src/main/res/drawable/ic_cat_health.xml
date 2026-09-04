@@ -1,28 +1,18 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Здоровье: аптечный крест. -->
+<!-- Здоровье: аптечка. Корпус прозрачный, крест и ручка плотные. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="24dp"
     android:height="24dp"
     android:viewportWidth="24"
     android:viewportHeight="24">
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="1.7"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M4.5,7h15a1.5,1.5 0 0,1 1.5,1.5v10a1.5,1.5 0 0,1 -1.5,1.5h-15A1.5,1.5 0 0,1 3,18.5v-10A1.5,1.5 0 0,1 4.5,7z" />
+        android:fillColor="#FF000000"
+        android:fillAlpha="0.28"
+        android:pathData="M4,7H20A1.75,1.75 0 0,1 21.75,8.75V18.75A1.75,1.75 0 0,1 20,20.5H4A1.75,1.75 0 0,1 2.25,18.75V8.75A1.75,1.75 0 0,1 4,7Z" />
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="1.7"
-        android:strokeLineCap="round"
-        android:strokeLineJoin="round"
-        android:pathData="M9,7V5a1.5,1.5 0 0,1 1.5,-1.5h3A1.5,1.5 0 0,1 15,5v2" />
+        android:fillColor="#FF000000"
+        android:pathData="M10.5,3.5H13.5A2,2 0 0,1 15.5,5.5V7.5H14V5.5A0.5,0.5 0 0,0 13.5,5H10.5A0.5,0.5 0 0,0 10,5.5V7.5H8.5V5.5A2,2 0 0,1 10.5,3.5Z" />
     <path
-        android:fillColor="#00000000"
-        android:strokeColor="#FF000000"
-        android:strokeWidth="1.7"
-        android:strokeLineCap="round"
-        android:pathData="M12,11v5M9.5,13.5h5" />
+        android:fillColor="#FF000000"
+        android:pathData="M11.1,10.6H12.9V12.85H15.15V14.65H12.9V16.9H11.1V14.65H8.85V12.85H11.1Z" />
 </vector>

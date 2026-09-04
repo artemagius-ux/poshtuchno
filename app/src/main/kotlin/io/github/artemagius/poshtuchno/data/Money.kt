@@ -2,11 +2,22 @@ package io.github.artemagius.poshtuchno.data
 
 /** Форматирование сумм. Внутри всё в копейках, наружу — рубли. */
 object Money {
-    fun format(kopecks: Long, withCurrency: Boolean = true): String {
+    /**
+     * @param showKopecks когда false, сумма округляется до рубля.
+     *   Округление, а не отбрасывание: иначе «99,90 ₽» превратилось бы в «99 ₽».
+     */
+    fun format(kopecks: Long, withCurrency: Boolean = true, showKopecks: Boolean = true): String {
         val sign = if (kopecks < 0) "-" else ""
         val abs = kotlin.math.abs(kopecks)
-        val rubles = abs / 100
-        val cents = abs % 100
+        val rubles: Long
+        val cents: Long
+        if (showKopecks) {
+            rubles = abs / 100
+            cents = abs % 100
+        } else {
+            rubles = (abs + 50) / 100
+            cents = 0
+        }
         val grouped = rubles.toString()
             .reversed()
             .chunked(3)
