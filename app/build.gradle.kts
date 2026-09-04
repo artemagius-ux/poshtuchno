@@ -34,6 +34,14 @@ android {
         localeFilters += setOf("ru", "en")
     }
 
+    lint {
+        warningsAsErrors = false
+        abortOnError = true
+        // Апдейты зависимостей отслеживаем осознанно, а не по требованию линта:
+        // свежие Compose/AGP требуют compileSdk 37, до которого мы дойдём отдельно.
+        disable += setOf("GradleDependency", "NewerVersionAvailable", "AndroidGradlePluginVersion")
+    }
+
     signingConfigs {
         if (keystoreProps.isNotEmpty()) {
             create("release") {
