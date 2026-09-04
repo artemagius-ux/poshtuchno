@@ -110,6 +110,16 @@ room {
 }
 
 dependencies {
+    constraints {
+        // CameraX просит concurrent-futures 1.1.0, androidx.test — 1.2.0.
+        // AGP согласует версии между compile- и runtime-путями, и расхождение
+        // валит сборку androidTest. Фиксируем одну версию для всех путей.
+        implementation(libs.androidx.concurrent.futures)
+        implementation(libs.androidx.concurrent.futures.ktx)
+        androidTestImplementation(libs.androidx.concurrent.futures)
+        androidTestImplementation(libs.androidx.concurrent.futures.ktx)
+    }
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.splashscreen)
     implementation(libs.androidx.activity.compose)
