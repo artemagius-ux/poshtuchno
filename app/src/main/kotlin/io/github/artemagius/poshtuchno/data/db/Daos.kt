@@ -26,6 +26,9 @@ interface CategoryDao {
     @Query("SELECT COUNT(*) FROM category")
     suspend fun count(): Int
 
+    @Query("DELETE FROM category WHERE id = :id")
+    suspend fun deleteById(id: Long)
+
     /**
      * Категории, которыми пользовались недавно — они идут первыми в быстром вводе.
      * Порядок: сначала по числу использований за период, потом по свежести.
@@ -111,7 +114,21 @@ interface PurchaseDao {
                    WHERE i.purchaseId = p.id
                    ORDER BY i.sumKopecks DESC
                    LIMIT 1
-               ) AS topCategoryName
+               ) AS topCategoryName,
+               (
+                   SELECT c.icon FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryIcon,
+               (
+                   SELECT c.colorArgb FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryColorArgb
         FROM purchase p
         LEFT JOIN shop s ON s.id = p.shopId
         ORDER BY p.purchasedAt DESC, p.id DESC
@@ -119,6 +136,43 @@ interface PurchaseDao {
         """,
     )
     fun observeRecent(limit: Int): Flow<List<PurchaseListItem>>
+
+    @Query(
+        """
+        SELECT p.id AS id,
+               p.purchasedAt AS purchasedAt,
+               p.totalKopecks AS totalKopecks,
+               p.note AS note,
+               s.name AS shopName,
+               (SELECT COUNT(*) FROM purchase_item i WHERE i.purchaseId = p.id) AS itemCount,
+               (
+                   SELECT c.name FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryName,
+               (
+                   SELECT c.icon FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryIcon,
+               (
+                   SELECT c.colorArgb FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryColorArgb
+        FROM purchase p
+        LEFT JOIN shop s ON s.id = p.shopId
+        WHERE p.purchasedAt >= :fromInclusive AND p.purchasedAt < :toExclusive
+        ORDER BY p.purchasedAt DESC, p.id DESC
+        """,
+    )
+    fun observeBetween(fromInclusive: Long, toExclusive: Long): Flow<List<PurchaseListItem>>
 
     @Query("SELECT * FROM purchase WHERE id = :id")
     suspend fun getById(id: Long): PurchaseEntity?
@@ -234,4 +288,6 @@ data class PurchaseListItem(
     val shopName: String?,
     val itemCount: Int,
     val topCategoryName: String?,
+    val topCategoryIcon: String? = null,
+    val topCategoryColorArgb: Int? = null,
 )

@@ -27,6 +27,7 @@ abstract class PoshtuchnoDatabase : RoomDatabase() {
     abstract fun productDao(): ProductDao
     abstract fun budgetDao(): BudgetDao
     abstract fun statsDao(): StatsDao
+    abstract fun analyticsDao(): AnalyticsDao
 
     companion object {
         @Volatile

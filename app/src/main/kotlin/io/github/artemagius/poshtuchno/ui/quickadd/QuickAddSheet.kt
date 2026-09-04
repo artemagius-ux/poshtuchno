@@ -13,26 +13,24 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.tooling.preview.Preview
@@ -46,7 +44,7 @@ import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
  * Лист быстрого ввода: сумма своей клавиатурой, категория одним тапом, заметка по желанию.
  *
  * Своя клавиатура, а не системная, по двум причинам: сумма — единственное
- * обязательное поле, и кнопка «Готово» должна быть под большим пальцем.
+ * обязательное поле, и кнопка «Сохранить» должна быть под большим пальцем.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,10 +66,10 @@ fun QuickAddSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(max = 640.dp)
+                .heightIn(max = 660.dp)
                 .verticalScroll(rememberScrollState())
                 .padding(horizontal = 20.dp)
-                .padding(bottom = 20.dp),
+                .padding(bottom = 24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             AmountDisplay(amount)
@@ -90,6 +88,7 @@ fun QuickAddSheet(
                 label = { Text("Заметка") },
                 placeholder = { Text("Необязательно") },
                 singleLine = true,
+                shape = MaterialTheme.shapes.medium,
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     imeAction = ImeAction.Done,
@@ -97,22 +96,17 @@ fun QuickAddSheet(
                 modifier = Modifier.fillMaxWidth(),
             )
 
-            NumberPad(
-                onDigit = onDigit,
-                onSeparator = onSeparator,
-                onBackspace = onBackspace,
-            )
+            NumberPad(onDigit = onDigit, onSeparator = onSeparator, onBackspace = onBackspace)
 
             Button(
                 onClick = onSave,
                 enabled = amount.kopecks > 0,
+                shape = MaterialTheme.shapes.large,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(56.dp),
             ) {
-                Icon(Icons.Default.Check, contentDescription = null)
-                Spacer(Modifier.size(8.dp))
-                Text("Сохранить")
+                Text("Сохранить", style = MaterialTheme.typography.titleMedium)
             }
         }
     }
@@ -120,19 +114,31 @@ fun QuickAddSheet(
 
 @Composable
 private fun AmountDisplay(amount: AmountInput) {
-    val shown = amount.display()
-    Text(
-        text = "$shown\u00A0\u20BD",
-        style = MaterialTheme.typography.displayMedium,
-        fontWeight = FontWeight.SemiBold,
+    Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 8.dp)
+            .padding(top = 4.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "Сумма",
+            style = MaterialTheme.typography.labelMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Text(
+            text = "${amount.display()}\u00A0\u20BD",
+            style = MaterialTheme.typography.displayMedium,
+            color = if (amount.hasValue) {
+                MaterialTheme.colorScheme.onSurface
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+            },
             // Экранный ридер должен произносить сумму целиком, а не по символам.
-            .clearAndSetSemantics {
+            modifier = Modifier.clearAndSetSemantics {
                 contentDescription = "Сумма: ${Money.format(amount.kopecks)}"
             },
-    )
+        )
+    }
 }
 
 @Composable
@@ -147,13 +153,21 @@ private fun CategoryChips(
         verticalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         categories.forEach { category ->
+            val accent = category.colorArgb.takeIf { it != 0 }?.let { Color(it) }
+                ?: MaterialTheme.colorScheme.primary
             FilterChip(
                 selected = category.id == selectedCategoryId,
                 onClick = { onCategorySelect(category.id) },
                 label = { Text(category.name) },
+                shape = MaterialTheme.shapes.small,
+                colors = FilterChipDefaults.filterChipColors(
+                    selectedContainerColor = accent.copy(alpha = 0.18f),
+                    selectedLabelColor = MaterialTheme.colorScheme.onSurface,
+                    selectedLeadingIconColor = accent,
+                ),
                 leadingIcon = {
                     Icon(
-                        imageVector = CategoryIcons[category.icon],
+                        painter = painterResource(CategoryIcons[category.icon]),
                         contentDescription = null,
                         modifier = Modifier.size(18.dp),
                     )
@@ -178,11 +192,7 @@ private fun NumberPad(
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 row.forEach { key ->
-                    PadButton(
-                        label = key,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onDigit(key[0]) },
-                    )
+                    PadButton(label = key, modifier = Modifier.weight(1f)) { onDigit(key[0]) }
                 }
             }
         }
@@ -190,22 +200,16 @@ private fun NumberPad(
             PadButton(
                 label = ",",
                 modifier = Modifier.weight(1f),
-                onClick = onSeparator,
                 description = "Запятая",
+                onClick = onSeparator,
             )
+            PadButton(label = "0", modifier = Modifier.weight(1f)) { onDigit('0') }
             PadButton(
-                label = "0",
+                label = "⌫",
                 modifier = Modifier.weight(1f),
-                onClick = { onDigit('0') },
-            )
-            FilledTonalButton(
+                description = "Удалить цифру",
                 onClick = onBackspace,
-                modifier = Modifier
-                    .weight(1f)
-                    .height(56.dp),
-            ) {
-                Icon(Icons.Default.Clear, contentDescription = "Удалить цифру")
-            }
+            )
         }
     }
 }
@@ -219,37 +223,34 @@ private fun PadButton(
 ) {
     FilledTonalButton(
         onClick = onClick,
-        modifier = modifier.height(56.dp),
+        shape = MaterialTheme.shapes.medium,
+        modifier = modifier
+            .height(58.dp)
+            .then(
+                if (description != null) {
+                    Modifier.clearAndSetSemantics { contentDescription = description }
+                } else {
+                    Modifier
+                },
+            ),
     ) {
-        Text(
-            text = label,
-            style = MaterialTheme.typography.headlineSmall,
-            modifier = if (description != null) {
-                Modifier.clearAndSetSemantics { contentDescription = description }
-            } else {
-                Modifier
-            },
-        )
+        Text(text = label, style = MaterialTheme.typography.headlineSmall)
     }
 }
 
-/** Тот же контент без bottom sheet — для превью и тестов вёрстки. */
 @Composable
-private fun QuickAddContentPreview(
-    amount: AmountInput,
-    categories: List<CategoryEntity>,
-) {
+private fun QuickAddContentPreview(amount: AmountInput, categories: List<CategoryEntity>) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp),
-        horizontalAlignment = Alignment.Start,
     ) {
         AmountDisplay(amount)
         CategoryChips(categories, categories.firstOrNull()?.id) {}
         NumberPad({}, {}, {})
-        TextButton(onClick = {}) { Text("Сохранить") }
+        Spacer(Modifier.size(4.dp))
+        Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Сохранить") }
     }
 }
 

@@ -1,4 +1,4 @@
-package io.github.artemagius.poshtuchno.ui.home
+package io.github.artemagius.poshtuchno.ui.components
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.text.KeyboardOptions
@@ -15,9 +15,7 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import io.github.artemagius.poshtuchno.data.Money
 
-/**
- * Диалог лимита на месяц. Пустое поле = лимита нет.
- */
+/** Диалог лимита на месяц. Пустое поле означает, что лимита нет. */
 @Composable
 fun MonthLimitDialog(
     currentLimitKopecks: Long?,
@@ -52,7 +50,7 @@ fun MonthLimitDialog(
                             when {
                                 !isValid -> "Введите сумму больше нуля"
                                 text.isBlank() -> "Пустое поле — лимит выключен"
-                                else -> "Прогресс появится на главном экране"
+                                else -> "Прогресс появится на вкладке «Сегодня»"
                             },
                         )
                     },
@@ -71,8 +69,6 @@ fun MonthLimitDialog(
                 Text("Сохранить")
             }
         },
-        dismissButton = {
-            TextButton(onClick = onDismiss) { Text("Отмена") }
-        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Отмена") } },
     )
 }

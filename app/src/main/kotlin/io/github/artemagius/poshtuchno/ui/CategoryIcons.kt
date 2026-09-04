@@ -1,42 +1,32 @@
 package io.github.artemagius.poshtuchno.ui
 
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Build
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Phone
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.ShoppingCart
-import androidx.compose.material.icons.filled.Star
-import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.annotation.DrawableRes
+import io.github.artemagius.poshtuchno.R
 
 /**
- * Имена иконок категорий отвязаны от ресурсов: в базе лежит строка,
- * а сопоставление живёт здесь. Набор можно менять без миграции.
- *
- * Пока используем material-icons-core — в нём нет тематических иконок
- * вроде «продукты» или «медицина», поэтому подбираем ближайшие по смыслу.
- * Свои vector drawable добавим, когда дойдём до полировки.
+ * Иконки категорий: в базе лежит короткое имя, здесь — сопоставление с ресурсом.
+ * Набор можно менять без миграции базы.
  */
 object CategoryIcons {
 
-    private val byName: Map<String, ImageVector> = mapOf(
-        "cart" to Icons.Default.ShoppingCart,
-        "cafe" to Icons.Default.Star,
-        "transport" to Icons.Default.Place,
-        "home" to Icons.Default.Home,
-        "health" to Icons.Default.Favorite,
-        "clothes" to Icons.Default.Person,
-        "fun" to Icons.Default.PlayArrow,
-        "subscription" to Icons.Default.Phone,
-        "calendar" to Icons.Default.DateRange,
-        "tools" to Icons.Default.Build,
+    @DrawableRes
+    val fallback: Int = R.drawable.ic_cat_other
+
+    private val byName: Map<String, Int> = mapOf(
+        "cart" to R.drawable.ic_cat_cart,
+        "cafe" to R.drawable.ic_cat_cafe,
+        "transport" to R.drawable.ic_cat_transport,
+        "home" to R.drawable.ic_cat_home,
+        "health" to R.drawable.ic_cat_health,
+        "clothes" to R.drawable.ic_cat_clothes,
+        "fun" to R.drawable.ic_cat_fun,
+        "subscription" to R.drawable.ic_cat_subscription,
+        "other" to R.drawable.ic_cat_other,
     )
 
-    val fallback: ImageVector = Icons.Default.Star
+    /** Имена в порядке показа в выборе иконки. */
+    val names: List<String> = byName.keys.toList()
 
-    operator fun get(name: String?): ImageVector = byName[name] ?: fallback
+    @DrawableRes
+    operator fun get(name: String?): Int = byName[name] ?: fallback
 }

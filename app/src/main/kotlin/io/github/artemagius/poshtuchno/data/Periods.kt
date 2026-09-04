@@ -49,6 +49,29 @@ object Periods {
     fun toLocalDateTime(epochMillis: Long, zone: ZoneId = ZoneId.systemDefault()): LocalDateTime =
         Instant.ofEpochMilli(epochMillis).atZone(zone).toLocalDateTime()
 
+    /**
+     * Сдвиг таймзоны в формате, который понимает SQLite: '+03:00' или '-05:00'.
+     * Нужен, чтобы группировка по дням в SQL шла по местным суткам, а не по UTC.
+     */
+    fun sqliteOffset(zone: ZoneId = ZoneId.systemDefault(), at: Instant = Instant.now()): String {
+        val seconds = zone.rules.getOffset(at).totalSeconds
+        val sign = if (seconds < 0) "-" else "+"
+        val abs = kotlin.math.abs(seconds)
+        val hours = abs / 3600
+        val minutes = (abs % 3600) / 60
+        return "%s%02d:%02d".format(sign, hours, minutes)
+    }
+
+    /** Диапазон месяца по смещению от текущего: 0 — этот месяц, -1 — прошлый. */
+    fun monthRangeAt(monthOffset: Int, zone: ZoneId = ZoneId.systemDefault()): LongRange =
+        monthRange(LocalDate.now(zone).withDayOfMonth(1).plusMonths(monthOffset.toLong()), zone)
+
+    fun monthTitle(monthOffset: Int, zone: ZoneId = ZoneId.systemDefault(), locale: Locale = Locale.getDefault()): String {
+        val date = LocalDate.now(zone).withDayOfMonth(1).plusMonths(monthOffset.toLong())
+        val name = monthName(date, locale)
+        return if (date.year == LocalDate.now(zone).year) name else "$name ${date.year}"
+    }
+
     /** Название месяца в именительном падеже: «Сентябрь». */
     fun monthName(date: LocalDate = LocalDate.now(), locale: Locale = Locale.getDefault()): String =
         date.month.getDisplayName(TextStyle.FULL_STANDALONE, locale)
