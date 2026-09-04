@@ -32,13 +32,10 @@ import io.github.artemagius.poshtuchno.ui.charts.Sparkline
 import io.github.artemagius.poshtuchno.ui.components.EmptyPlaceholder
 import io.github.artemagius.poshtuchno.ui.components.PurchaseRow
 import io.github.artemagius.poshtuchno.ui.components.SectionHeader
+import io.github.artemagius.poshtuchno.ui.rememberDateFormatter
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
+import io.github.artemagius.poshtuchno.ui.titlecaseFirst
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private val dayTitleFormatter: DateTimeFormatter =
-    DateTimeFormatter.ofPattern("EEEE, d MMMM", Locale.getDefault())
 
 @Composable
 fun TodayScreen(
@@ -127,8 +124,7 @@ private fun DayHeroCard(state: TodayUiState) {
     ) {
         Column(modifier = Modifier.padding(20.dp)) {
             Text(
-                text = dayTitleFormatter.format(state.date)
-                    .replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                text = rememberDateFormatter("EEEE, d MMMM").format(state.date).titlecaseFirst(),
                 style = MaterialTheme.typography.labelLarge,
             )
             Spacer(Modifier.height(6.dp))

@@ -39,15 +39,13 @@ import io.github.artemagius.poshtuchno.ui.charts.DonutSlice
 import io.github.artemagius.poshtuchno.ui.components.EmptyPlaceholder
 import io.github.artemagius.poshtuchno.ui.components.PurchaseRow
 import io.github.artemagius.poshtuchno.ui.components.SectionHeader
+import io.github.artemagius.poshtuchno.ui.currentLocale
 import io.github.artemagius.poshtuchno.ui.model.displayName
 import io.github.artemagius.poshtuchno.ui.model.resolveColor
+import io.github.artemagius.poshtuchno.ui.rememberDateFormatter
 import io.github.artemagius.poshtuchno.ui.theme.LocalChartColors
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private val selectedDayFormatter = DateTimeFormatter.ofPattern("d MMMM", Locale.getDefault())
 
 @Composable
 fun AnalyticsScreen(
@@ -121,7 +119,7 @@ fun AnalyticsScreen(
                         DonutChart(
                             slices = slices,
                             totalKopecks = state.totalKopecks,
-                            centerLabel = state.title.lowercase(Locale.getDefault()),
+                            centerLabel = state.title.lowercase(currentLocale()),
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(190.dp),
@@ -236,9 +234,10 @@ private fun DaysCard(
             ) {
                 Text(text = "По дням", style = MaterialTheme.typography.titleMedium)
                 val selected = days.firstOrNull { it.date == selectedDay }
+                val formatter = rememberDateFormatter("d MMMM")
                 Text(
                     text = if (selected != null) {
-                        "${selectedDayFormatter.format(selected.date)}: ${Money.format(selected.totalKopecks)}"
+                        "${formatter.format(selected.date)}: ${Money.format(selected.totalKopecks)}"
                     } else {
                         "нажми на столбик"
                     },

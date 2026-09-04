@@ -33,12 +33,10 @@ import io.github.artemagius.poshtuchno.ui.components.DayHeader
 import io.github.artemagius.poshtuchno.ui.components.EmptyPlaceholder
 import io.github.artemagius.poshtuchno.ui.components.PurchaseRow
 import io.github.artemagius.poshtuchno.ui.components.SwipeToDelete
+import io.github.artemagius.poshtuchno.ui.rememberDateFormatter
+import io.github.artemagius.poshtuchno.ui.titlecaseFirst
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-import java.util.Locale
-
-private val dayFormatter = DateTimeFormatter.ofPattern("d MMMM, EEEE", Locale.getDefault())
 
 @Composable
 fun HistoryScreen(
@@ -104,8 +102,9 @@ fun HistoryScreen(
             state.groups.forEach { group ->
                 item(key = "header-${group.date}") {
                     DayHeader(
-                        title = dayFormatter.format(group.date)
-                            .replaceFirstChar { it.titlecase(Locale.getDefault()) },
+                        title = rememberDateFormatter("d MMMM, EEEE")
+                            .format(group.date)
+                            .titlecaseFirst(),
                         totalKopecks = group.totalKopecks,
                         modifier = Modifier.padding(top = 12.dp, bottom = 2.dp),
                     )
