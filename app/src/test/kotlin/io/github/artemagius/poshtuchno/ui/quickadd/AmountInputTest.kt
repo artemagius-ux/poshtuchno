@@ -62,7 +62,8 @@ class AmountInputTest {
     @Test
     fun `backspace removes kopecks then separator then digits`() {
         assertEquals("12,3", type("12,34<").display())
-        assertEquals("12", type("12,34<<").display())
+        // Копейки стёрты, но режим ввода копеек сохраняется: можно набрать заново.
+        assertEquals("12,", type("12,34<<").display())
         assertEquals("12", type("12,34<<<").display())
         assertEquals("1", type("12,34<<<<").display())
     }
