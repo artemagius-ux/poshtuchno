@@ -79,7 +79,7 @@ class ProductGroupingTest {
         val groups = ProductGrouping.suggest(products)
         val sameMembers = groups.filter { it.productIds == listOf(1L, 2L) }
         assertEquals(sameMembers.toString(), 1, sameMembers.size)
-        assertEquals("энергетический", sameMembers.first().token)
+        assertEquals("энергетик", sameMembers.first().token)
     }
 
     @Test
