@@ -6,6 +6,7 @@ import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
 import androidx.room.Transaction
+import androidx.room.Update
 import androidx.room.Upsert
 import kotlinx.coroutines.flow.Flow
 
@@ -203,8 +204,23 @@ interface ProductDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insert(product: ProductEntity): Long
 
+    @Update
+    suspend fun update(product: ProductEntity)
+
+    @Query("SELECT * FROM product WHERE matchKey = :matchKey LIMIT 1")
+    suspend fun findByMatchKey(matchKey: String): ProductEntity?
+
+    @Query("SELECT * FROM product WHERE id = :id")
+    suspend fun findById(id: Long): ProductEntity?
+
     @Query("SELECT * FROM product WHERE barcode = :barcode LIMIT 1")
     suspend fun findByBarcode(barcode: String): ProductEntity?
+
+    @Query("SELECT * FROM product ORDER BY canonicalName")
+    suspend fun getAll(): List<ProductEntity>
+
+    @Query("SELECT * FROM product ORDER BY canonicalName")
+    fun observeAll(): Flow<List<ProductEntity>>
 
     @Query(
         """
@@ -215,6 +231,38 @@ interface ProductDao {
         """,
     )
     suspend fun search(query: String, limit: Int = 20): List<ProductEntity>
+
+    /**
+     * Подсказки для ввода позиции: сначала то, что покупалось чаще и недавно.
+     * Возвращаем и последнюю цену — она подставляется в поле, чтобы не набирать заново.
+     */
+    @Query(
+        """
+        SELECT p.id AS id,
+               p.canonicalName AS name,
+               p.brand AS brand,
+               p.volumeMl AS volumeMl,
+               p.weightG AS weightG,
+               p.packCount AS packCount,
+               p.defaultCategoryId AS categoryId,
+               COUNT(i.id) AS timesBought,
+               MAX(pur.purchasedAt) AS lastBoughtAt,
+               (
+                   SELECT i2.unitPriceKopecks FROM purchase_item i2
+                   JOIN purchase pur2 ON pur2.id = i2.purchaseId
+                   WHERE i2.productId = p.id
+                   ORDER BY pur2.purchasedAt DESC LIMIT 1
+               ) AS lastPriceKopecks
+        FROM product p
+        LEFT JOIN purchase_item i ON i.productId = p.id
+        LEFT JOIN purchase pur ON pur.id = i.purchaseId
+        WHERE :query = '' OR p.canonicalName LIKE '%' || :query || '%'
+        GROUP BY p.id
+        ORDER BY timesBought DESC, lastBoughtAt DESC, p.canonicalName
+        LIMIT :limit
+        """,
+    )
+    suspend fun suggestions(query: String, limit: Int = 12): List<ProductSuggestion>
 
     /** Последняя известная цена товара — подставляется при вводе новой позиции. */
     @Query(
@@ -227,6 +275,21 @@ interface ProductDao {
         """,
     )
     suspend fun lastPrice(productId: Long): Long?
+
+    /** История цены товара — график «сколько стоило раньше». */
+    @Query(
+        """
+        SELECT pur.purchasedAt AS purchasedAt,
+               i.unitPriceKopecks AS priceKopecks,
+               s.name AS shopName
+        FROM purchase_item i
+        JOIN purchase pur ON pur.id = i.purchaseId
+        LEFT JOIN shop s ON s.id = pur.shopId
+        WHERE i.productId = :productId
+        ORDER BY pur.purchasedAt
+        """,
+    )
+    fun observePriceHistory(productId: Long): Flow<List<PricePoint>>
 }
 
 @Dao
@@ -290,4 +353,25 @@ data class PurchaseListItem(
     val topCategoryName: String?,
     val topCategoryIcon: String? = null,
     val topCategoryColorArgb: Int? = null,
+)
+
+/** Подсказка при вводе позиции: что покупали раньше и по какой цене. */
+data class ProductSuggestion(
+    val id: Long,
+    val name: String,
+    val brand: String?,
+    val volumeMl: Int?,
+    val weightG: Int?,
+    val packCount: Int?,
+    val categoryId: Long?,
+    val timesBought: Int,
+    val lastBoughtAt: Long?,
+    val lastPriceKopecks: Long?,
+)
+
+/** Точка истории цены товара. */
+data class PricePoint(
+    val purchasedAt: Long,
+    val priceKopecks: Long,
+    val shopName: String?,
 )

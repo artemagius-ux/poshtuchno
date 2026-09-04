@@ -6,16 +6,10 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalButton
-import androidx.compose.material3.FilterChip
-import androidx.compose.material3.FilterChipDefaults
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
@@ -25,7 +19,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
@@ -35,16 +28,16 @@ import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.data.Money
 import io.github.artemagius.poshtuchno.data.ThemeMode
 import io.github.artemagius.poshtuchno.data.db.CategoryEntity
-import io.github.artemagius.poshtuchno.ui.CategoryIcons
+import io.github.artemagius.poshtuchno.ui.components.CategoryPicker
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 
 /**
  * Лист быстрого ввода: сумма своей клавиатурой, категория одним тапом, заметка по желанию.
  *
- * Содержимое умышленно не обёрнуто в verticalScroll: вертикальная прокрутка внутри
- * bottom sheet конфликтует с его же жестом перетаскивания, и лист начинает
- * дёргаться вверх-вниз, особенно когда открывается клавиатура. Поэтому набор
- * помещается целиком, а категории прокручиваются горизонтально.
+ * Содержимое умышленно не обёрнуто в verticalScroll, и выбор категории тоже без
+ * своей прокрутки: любая вертикальная прокрутка внутри bottom sheet конфликтует
+ * с его жестом перетаскивания, и лист начинает дёргаться вверх-вниз. Поэтому
+ * набор помещается целиком, а категории показываются сеткой с поиском.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -153,31 +146,13 @@ private fun CategoryChips(
     selectedCategoryId: Long?,
     onCategorySelect: (Long) -> Unit,
 ) {
-    // Горизонтальная прокрутка: она не спорит с вертикальным жестом листа.
-    LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        items(categories, key = { it.id }) { category ->
-            FilterChip(
-                selected = category.id == selectedCategoryId,
-                onClick = { onCategorySelect(category.id) },
-                label = { Text(category.name) },
-                shape = MaterialTheme.shapes.small,
-                colors = FilterChipDefaults.filterChipColors(
-                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
-                    selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                    selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                    selectedLeadingIconColor = MaterialTheme.colorScheme.primary,
-                ),
-                border = null,
-                leadingIcon = {
-                    Icon(
-                        painter = painterResource(CategoryIcons[category.icon]),
-                        contentDescription = null,
-                        modifier = Modifier.size(18.dp),
-                    )
-                },
-            )
-        }
-    }
+    CategoryPicker(
+        categories = categories,
+        selectedId = selectedCategoryId,
+        onSelect = onCategorySelect,
+        columns = 4,
+        maxLines = 2,
+    )
 }
 
 @Composable

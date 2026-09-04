@@ -1,5 +1,6 @@
 package io.github.artemagius.poshtuchno.ui.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +51,7 @@ import io.github.artemagius.poshtuchno.ui.components.AppCard
 import io.github.artemagius.poshtuchno.ui.components.CategoryAvatar
 import io.github.artemagius.poshtuchno.ui.components.SectionHeader
 import io.github.artemagius.poshtuchno.ui.money
+import io.github.artemagius.poshtuchno.ui.theme.AppPalette
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 
 @Composable
@@ -57,6 +59,7 @@ fun SettingsScreen(
     state: SettingsUiState,
     onLimitClick: () -> Unit,
     onThemeModeChange: (ThemeMode) -> Unit,
+    onPaletteChange: (String) -> Unit,
     onDynamicColorChange: (Boolean) -> Unit,
     onCloseAfterSaveChange: (Boolean) -> Unit,
     onShowKopecksChange: (Boolean) -> Unit,
@@ -115,11 +118,23 @@ fun SettingsScreen(
 
                 Spacer(Modifier.height(16.dp))
                 HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+                Spacer(Modifier.height(12.dp))
+
+                Text(text = "Цвет", style = MaterialTheme.typography.bodyLarge)
+                Spacer(Modifier.height(10.dp))
+                PaletteRow(
+                    selected = AppPalette.parse(state.settings.palette),
+                    enabled = !state.settings.dynamicColor,
+                    onSelect = { onPaletteChange(it.name) },
+                )
+
+                Spacer(Modifier.height(16.dp))
+                HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
                 Spacer(Modifier.height(4.dp))
 
                 SettingSwitch(
                     title = "Цвета из обоев",
-                    subtitle = "Взять акцент из системной палитры вместо фирменного",
+                    subtitle = "Взять акцент из системной палитры вместо выбранного",
                     checked = state.settings.dynamicColor,
                     onCheckedChange = onDynamicColorChange,
                 )
@@ -266,6 +281,54 @@ fun SettingsScreen(
     }
 }
 
+/** Ряд цветных кружков: выбор акцентной палитры. */
+@Composable
+private fun PaletteRow(
+    selected: AppPalette,
+    enabled: Boolean,
+    onSelect: (AppPalette) -> Unit,
+) {
+    FlowRow(
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+    ) {
+        AppPalette.entries.forEach { palette ->
+            val isSelected = palette == selected && enabled
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                modifier = Modifier
+                    .clickable(enabled = enabled) { onSelect(palette) }
+                    .padding(4.dp),
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .border(
+                            width = if (isSelected) 3.dp else 0.dp,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            shape = CircleShape,
+                        )
+                        .padding(4.dp)
+                        .background(
+                            color = palette.swatch.copy(alpha = if (enabled) 1f else 0.35f),
+                            shape = CircleShape,
+                        ),
+                )
+                Spacer(Modifier.height(4.dp))
+                Text(
+                    text = palette.label,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = if (isSelected) {
+                        MaterialTheme.colorScheme.onSurface
+                    } else {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                )
+            }
+        }
+    }
+}
+
 @Composable
 private fun SettingSwitch(
     title: String,
@@ -377,6 +440,7 @@ private fun SettingsPreview() {
             ),
             onLimitClick = {},
             onThemeModeChange = {},
+            onPaletteChange = {},
             onDynamicColorChange = {},
             onCloseAfterSaveChange = {},
             onShowKopecksChange = {},

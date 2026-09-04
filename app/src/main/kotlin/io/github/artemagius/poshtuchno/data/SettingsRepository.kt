@@ -25,6 +25,7 @@ enum class ThemeMode(val label: String) {
 
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.Auto,
+    val palette: String = "Violet",
     /** Обои-цвета Android 12+. Выключено по умолчанию: фирменный фиолетовый важнее. */
     val dynamicColor: Boolean = false,
     /** Закрывать приложение сразу после сохранения траты. */
@@ -38,6 +39,7 @@ class SettingsRepository(private val context: Context) {
 
     private object Keys {
         val themeMode = stringPreferencesKey("theme_mode")
+        val palette = stringPreferencesKey("palette")
         val dynamicColor = booleanPreferencesKey("dynamic_color")
         val closeAfterSave = booleanPreferencesKey("close_after_save")
         val showKopecks = booleanPreferencesKey("show_kopecks")
@@ -46,6 +48,7 @@ class SettingsRepository(private val context: Context) {
     val settings: Flow<AppSettings> = context.dataStore.data.map { prefs ->
         AppSettings(
             themeMode = ThemeMode.parse(prefs[Keys.themeMode]),
+            palette = prefs[Keys.palette] ?: "Violet",
             dynamicColor = prefs[Keys.dynamicColor] ?: false,
             closeAfterSave = prefs[Keys.closeAfterSave] ?: false,
             showKopecks = prefs[Keys.showKopecks] ?: true,
@@ -54,6 +57,10 @@ class SettingsRepository(private val context: Context) {
 
     suspend fun setThemeMode(mode: ThemeMode) {
         context.dataStore.edit { it[Keys.themeMode] = mode.name }
+    }
+
+    suspend fun setPalette(name: String) {
+        context.dataStore.edit { it[Keys.palette] = name }
     }
 
     suspend fun setDynamicColor(enabled: Boolean) {

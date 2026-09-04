@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Монохромная версия для тематических иконок Android 13+.
+  Система сама красит её в цвет обоев, поэтому здесь только силуэт:
+  голова с хохолком, вырезы под глаза и клюв, чек в клюве.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M40,30L44,18L50,27L54,14L58,27L64,18L68,30Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:fillType="evenOdd"
+        android:pathData="M54,26C69.5,26 80,37.5 80,52.5C80,68 69,79 54,79C39,79 28,68 28,52.5C28,37.5 38.5,26 54,26ZM43,49A9,9 0 1,0 43.01,49ZM65,49A9,9 0 1,0 65.01,49Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M63,60L82,55L86,74L80,72.5L78,77L72,74L70,78L64,75Z" />
+</vector>

@@ -6,10 +6,17 @@ import io.github.artemagius.poshtuchno.data.db.BudgetScope
 import io.github.artemagius.poshtuchno.data.db.CategoryBreakdown
 import io.github.artemagius.poshtuchno.data.db.CategoryEntity
 import io.github.artemagius.poshtuchno.data.db.DailyTotal
+import io.github.artemagius.poshtuchno.data.db.GroupTotal
 import io.github.artemagius.poshtuchno.data.db.PoshtuchnoDatabase
+import io.github.artemagius.poshtuchno.data.db.PricePoint
+import io.github.artemagius.poshtuchno.data.db.ProductEntity
+import io.github.artemagius.poshtuchno.data.db.ProductGroupEntity
+import io.github.artemagius.poshtuchno.data.db.ProductSuggestion
+import io.github.artemagius.poshtuchno.data.db.ProductTotal
 import io.github.artemagius.poshtuchno.data.db.PurchaseEntity
 import io.github.artemagius.poshtuchno.data.db.PurchaseItemEntity
 import io.github.artemagius.poshtuchno.data.db.PurchaseListItem
+import io.github.artemagius.poshtuchno.data.db.PurchaseSource
 import kotlinx.coroutines.flow.Flow
 
 /**
@@ -19,6 +26,8 @@ import kotlinx.coroutines.flow.Flow
  * его имеет смысл разбить по областям (покупки / товары / статистика).
  */
 class ExpenseRepository(private val db: PoshtuchnoDatabase) {
+
+    private val matcher = ProductMatcher(db.productDao(), db.productGroupDao())
 
     // --- категории ---
 
@@ -92,6 +101,92 @@ class ExpenseRepository(private val db: PoshtuchnoDatabase) {
         )
     }
 
+    // --- позиции покупки ---
+
+    /**
+     * Сохраняет покупку с разбором по позициям.
+     *
+     * Каждая позиция сопоставляется с карточкой товара: одинаковый товар,
+     * написанный по-разному, склеивается в одну карточку. После сохранения
+     * пересчитываются автоматические подкатегории.
+     */
+    suspend fun addItemizedPurchase(
+        items: List<NewItem>,
+        shopId: Long? = null,
+        purchasedAt: Long = System.currentTimeMillis(),
+        source: PurchaseSource = PurchaseSource.MANUAL,
+        note: String? = null,
+        fiscal: FiscalMarks? = null,
+    ): Long {
+        require(items.isNotEmpty()) { "purchase must have at least one item" }
+
+        val total = items.sumOf { it.sumKopecks }
+        val purchaseId = db.purchaseDao().insert(
+            PurchaseEntity(
+                shopId = shopId,
+                purchasedAt = purchasedAt,
+                totalKopecks = total,
+                source = source,
+                fiscalNumber = fiscal?.fn,
+                fiscalDocument = fiscal?.fd,
+                fiscalSign = fiscal?.fp,
+                note = note?.trim()?.takeIf { it.isNotEmpty() },
+            ),
+        )
+
+        val rows = items.map { item ->
+            val productId = matcher.resolve(item.name, item.categoryId)
+            PurchaseItemEntity(
+                purchaseId = purchaseId,
+                productId = productId,
+                categoryId = item.categoryId,
+                rawName = item.name,
+                quantityMilli = item.quantityMilli,
+                unitPriceKopecks = item.unitPriceKopecks,
+                sumKopecks = item.sumKopecks,
+            )
+        }
+        db.purchaseDao().insertItems(rows)
+        matcher.refreshGroups()
+        return purchaseId
+    }
+
+    suspend fun productSuggestions(query: String, limit: Int = 12): List<ProductSuggestion> =
+        db.productDao().suggestions(query.trim(), limit)
+
+    suspend fun findProductByBarcode(barcode: String): ProductEntity? =
+        db.productDao().findByBarcode(barcode)
+
+    fun observePriceHistory(productId: Long): Flow<List<PricePoint>> =
+        db.productDao().observePriceHistory(productId)
+
+    suspend fun isFiscalDuplicate(fn: String, fd: String, fp: String): Boolean =
+        db.purchaseDao().existsFiscal(fn, fd, fp)
+
+    // --- автоматические подкатегории ---
+
+    fun observeProductGroups(): Flow<List<ProductGroupEntity>> =
+        db.productGroupDao().observeVisible()
+
+    fun observeAllProductGroups(): Flow<List<ProductGroupEntity>> =
+        db.productGroupDao().observeAll()
+
+    fun observeGroupTotals(range: LongRange): Flow<List<GroupTotal>> =
+        db.productGroupDao().observeGroupTotals(range.first, range.last + 1)
+
+    fun observeGroupProducts(groupId: Long, range: LongRange): Flow<List<ProductTotal>> =
+        db.productGroupDao().observeGroupProducts(groupId, range.first, range.last + 1)
+
+    suspend fun renameGroup(id: Long, title: String) = db.productGroupDao().rename(id, title)
+
+    suspend fun setGroupHidden(id: Long, hidden: Boolean) =
+        db.productGroupDao().setHidden(id, hidden)
+
+    suspend fun setGroupPinned(id: Long, pinned: Boolean) =
+        db.productGroupDao().setPinned(id, pinned)
+
+    suspend fun refreshProductGroups() = matcher.refreshGroups()
+
     // --- аналитика ---
 
     fun observeDailyTotals(range: LongRange, tzOffset: String): Flow<List<DailyTotal>> =
@@ -121,4 +216,22 @@ class ExpenseRepository(private val db: PoshtuchnoDatabase) {
 data class DeletedPurchase(
     val purchase: PurchaseEntity,
     val items: List<PurchaseItemEntity>,
+)
+
+/** Позиция, которую пользователь добавляет в покупку. */
+data class NewItem(
+    val name: String,
+    val unitPriceKopecks: Long,
+    /** Количество в тысячных: 1 шт -> 1000, 0,25 кг -> 250. */
+    val quantityMilli: Long = 1000,
+    val categoryId: Long? = null,
+) {
+    val sumKopecks: Long get() = unitPriceKopecks * quantityMilli / 1000
+}
+
+/** Реквизиты фискального чека — по ним ловятся повторные импорты. */
+data class FiscalMarks(
+    val fn: String,
+    val fd: String,
+    val fp: String,
 )

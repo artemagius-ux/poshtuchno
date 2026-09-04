@@ -48,6 +48,10 @@ class SettingsViewModel(
         viewModelScope.launch { settingsRepository.setThemeMode(mode) }
     }
 
+    fun setPalette(name: String) {
+        viewModelScope.launch { settingsRepository.setPalette(name) }
+    }
+
     fun setDynamicColor(enabled: Boolean) {
         viewModelScope.launch { settingsRepository.setDynamicColor(enabled) }
     }

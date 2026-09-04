@@ -1,13 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  Маскот: ворон с чеком в клюве.
+
+  Голова, глаза и клюв нарисованы симметрично относительно центра (54,58),
+  чек уходит в сторону — как в описании иконки. Один слой заливки на элемент,
+  без градиентов: иконка должна читаться и в монохромном режиме Android 13+.
+-->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Ценник: намёк на «поштучно» — цена у отдельной вещи. -->
-    <group android:translateX="22" android:translateY="22">
-        <path
-            android:fillColor="#FFFFFF"
-            android:pathData="M36.2,2.5L61.5,2.5A2.5,2.5 0 0 1 64,5L64,30.3A6,6 0 0 1 62.2,34.5L34.5,62.2A6,6 0 0 1 26,62.2L4.3,40.5A6,6 0 0 1 4.3,32L32,4.3A6,6 0 0 1 36.2,2.5ZM50,12A6,6 0 1 0 50,24A6,6 0 0 0 50,12Z" />
-    </group>
+
+    <!-- Чек в клюве, уходит вправо-вниз -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M63,60L82,55L86,74L80,72.5L78,77L72,74L70,78L64,75Z" />
+    <path
+        android:fillColor="#33000000"
+        android:pathData="M68,62.5L79.5,59.8L80.2,62.6L68.7,65.3ZM69.5,68L78,66L78.7,68.8L70.2,70.8Z" />
+
+    <!-- Хохолок -->
+    <path
+        android:fillColor="#FF2B2440"
+        android:pathData="M40,30L44,18L50,27L54,14L58,27L64,18L68,30Z" />
+
+    <!-- Голова -->
+    <path
+        android:fillColor="#FF3B3357"
+        android:pathData="M54,26C69.5,26 80,37.5 80,52.5C80,68 69,79 54,79C39,79 28,68 28,52.5C28,37.5 38.5,26 54,26Z" />
+
+    <!-- Щёки: слегка светлее, «пушистость» -->
+    <path
+        android:fillColor="#FF4A4270"
+        android:pathData="M33,60A8,8 0 1,0 33.01,60ZM75,60A8,8 0 1,0 75.01,60Z" />
+
+    <!-- Глаза: белки -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M43,49A11,11 0 1,0 43.01,49ZM65,49A11,11 0 1,0 65.01,49Z" />
+    <!-- Зрачки -->
+    <path
+        android:fillColor="#FF1A1630"
+        android:pathData="M43.6,50.5A6.4,6.4 0 1,0 43.61,50.5ZM65.6,50.5A6.4,6.4 0 1,0 65.61,50.5Z" />
+    <!-- Блики -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M40.5,45.5A2.4,2.4 0 1,0 40.51,45.5ZM62.5,45.5A2.4,2.4 0 1,0 62.51,45.5Z" />
+
+    <!-- Клюв -->
+    <path
+        android:fillColor="#FFFFB74D"
+        android:pathData="M54,57L66,62.5L54,68.5L48,62.5Z" />
+    <path
+        android:fillColor="#FFE59A2E"
+        android:pathData="M54,62.5L66,62.5L54,68.5L50,64.5Z" />
 </vector>

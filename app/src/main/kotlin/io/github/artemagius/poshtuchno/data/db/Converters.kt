@@ -23,4 +23,11 @@ class Converters {
     @TypeConverter
     fun stringToBudgetPeriod(value: String): BudgetPeriod =
         runCatching { BudgetPeriod.valueOf(value) }.getOrDefault(BudgetPeriod.MONTH)
+
+    @TypeConverter
+    fun unitKindToString(value: UnitKind): String = value.name
+
+    @TypeConverter
+    fun stringToUnitKind(value: String): UnitKind =
+        runCatching { UnitKind.valueOf(value) }.getOrDefault(UnitKind.PIECE)
 }

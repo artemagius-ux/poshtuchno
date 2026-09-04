@@ -7,19 +7,20 @@ import io.github.artemagius.poshtuchno.data.db.CategoryEntity
  * дальше пользователь правит его сам.
  *
  * icon — имя из [io.github.artemagius.poshtuchno.ui.CategoryIcons], а не ресурс,
- * чтобы набор иконок можно было менять без миграции базы.
+ * чтобы набор иконок можно было менять без миграции базы. Цвет не задаём:
+ * палитра приложения единая, категории различаются иконкой.
  */
 object DefaultCategories {
 
     val all: List<CategoryEntity> = listOf(
-        CategoryEntity(name = "Продукты", icon = "cart", colorArgb = 0xFF43A047.toInt(), sortOrder = 0),
-        CategoryEntity(name = "Кафе и еда вне дома", icon = "cafe", colorArgb = 0xFFEF6C00.toInt(), sortOrder = 1),
-        CategoryEntity(name = "Транспорт", icon = "transport", colorArgb = 0xFF1E88E5.toInt(), sortOrder = 2),
-        CategoryEntity(name = "Дом", icon = "home", colorArgb = 0xFF6D4C41.toInt(), sortOrder = 3),
-        CategoryEntity(name = "Здоровье", icon = "health", colorArgb = 0xFFE53935.toInt(), sortOrder = 4),
-        CategoryEntity(name = "Одежда", icon = "clothes", colorArgb = 0xFF8E24AA.toInt(), sortOrder = 5),
-        CategoryEntity(name = "Развлечения", icon = "fun", colorArgb = 0xFFD81B60.toInt(), sortOrder = 6),
-        CategoryEntity(name = "Связь и подписки", icon = "subscription", colorArgb = 0xFF00897B.toInt(), sortOrder = 7),
-        CategoryEntity(name = "Прочее", icon = "other", colorArgb = 0xFF546E7A.toInt(), sortOrder = 8),
+        CategoryEntity(name = "Продукты", icon = "cart", sortOrder = 0),
+        CategoryEntity(name = "Кафе", icon = "cafe", sortOrder = 1),
+        CategoryEntity(name = "Транспорт", icon = "transport", sortOrder = 2),
+        CategoryEntity(name = "Дом", icon = "home", sortOrder = 3),
+        CategoryEntity(name = "Здоровье", icon = "health", sortOrder = 4),
+        CategoryEntity(name = "Одежда", icon = "clothes", sortOrder = 5),
+        CategoryEntity(name = "Развлечения", icon = "fun", sortOrder = 6),
+        CategoryEntity(name = "Подписки", icon = "subscription", sortOrder = 7),
+        CategoryEntity(name = "Прочее", icon = "other", sortOrder = 8),
     )
 }

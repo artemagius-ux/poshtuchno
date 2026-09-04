@@ -9,15 +9,21 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.togetherWith
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.ListItem
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
@@ -48,16 +54,22 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import io.github.artemagius.poshtuchno.data.AppSettings
 import io.github.artemagius.poshtuchno.ui.LocalShowKopecks
 import io.github.artemagius.poshtuchno.ui.Tab
+import io.github.artemagius.poshtuchno.ui.additem.AddItemsScreen
+import io.github.artemagius.poshtuchno.ui.additem.AddItemsViewModel
 import io.github.artemagius.poshtuchno.ui.analytics.AnalyticsScreen
 import io.github.artemagius.poshtuchno.ui.analytics.AnalyticsViewModel
 import io.github.artemagius.poshtuchno.ui.components.MonthLimitDialog
 import io.github.artemagius.poshtuchno.ui.history.HistoryMessage
 import io.github.artemagius.poshtuchno.ui.history.HistoryScreen
 import io.github.artemagius.poshtuchno.ui.history.HistoryViewModel
+import io.github.artemagius.poshtuchno.ui.products.ProductsScreen
+import io.github.artemagius.poshtuchno.ui.products.ProductsViewModel
 import io.github.artemagius.poshtuchno.ui.quickadd.QuickAddSheet
 import io.github.artemagius.poshtuchno.ui.quickadd.QuickAddViewModel
+import io.github.artemagius.poshtuchno.ui.scan.ScanReceiptScreen
 import io.github.artemagius.poshtuchno.ui.settings.SettingsScreen
 import io.github.artemagius.poshtuchno.ui.settings.SettingsViewModel
+import io.github.artemagius.poshtuchno.ui.theme.AppPalette
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 import io.github.artemagius.poshtuchno.ui.today.TodayMessage
 import io.github.artemagius.poshtuchno.ui.today.TodayScreen
@@ -75,10 +87,11 @@ class MainActivity : ComponentActivity() {
 
             PoshtuchnoTheme(
                 themeMode = settings.themeMode,
+                palette = AppPalette.parse(settings.palette),
                 dynamicColor = settings.dynamicColor,
             ) {
                 CompositionLocalProvider(LocalShowKopecks provides settings.showKopecks) {
-                    PoshtuchnoScaffold(
+                    PoshtuchnoRoot(
                         container = container,
                         settings = settings,
                         onCloseRequested = { finish() },
@@ -89,17 +102,93 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
+/** Куда ведёт кнопка «+»: список вкладок или полноэкранные потоки. */
+private enum class Screen { Tabs, AddItems, Scan }
+
 @Composable
-private fun PoshtuchnoScaffold(
+private fun PoshtuchnoRoot(
     container: AppContainer,
     settings: AppSettings,
     onCloseRequested: () -> Unit,
 ) {
     val repository = container.expenseRepository
+    var screen by remember { mutableStateOf(Screen.Tabs) }
+
+    val addItemsVm: AddItemsViewModel = viewModel(
+        factory = viewModelFactory { AddItemsViewModel(repository) },
+    )
+    val addState by addItemsVm.state.collectAsState()
+    val suggestions by addItemsVm.suggestions.collectAsState()
+    val addSaved by addItemsVm.saved.collectAsState()
+
+    LaunchedEffect(addSaved) {
+        if (addSaved != null) {
+            addItemsVm.consumeSaved()
+            screen = Screen.Tabs
+        }
+    }
+
+    when (screen) {
+        Screen.Tabs -> TabsScreen(
+            container = container,
+            settings = settings,
+            onCloseRequested = onCloseRequested,
+            onAddItemsRequested = {
+                addItemsVm.startManual()
+                screen = Screen.AddItems
+            },
+            onScanRequested = { screen = Screen.Scan },
+        )
+
+        Screen.AddItems -> AddItemsScreen(
+            state = addState,
+            suggestions = suggestions,
+            onClose = {
+                addItemsVm.reset()
+                screen = Screen.Tabs
+            },
+            onScanClick = { screen = Screen.Scan },
+            onAddDraft = addItemsVm::addEmptyDraft,
+            onRemoveDraft = addItemsVm::removeDraft,
+            onEditDraft = addItemsVm::editDraft,
+            onNameChange = addItemsVm::onNameChange,
+            onPriceChange = addItemsVm::onPriceChange,
+            onQuantityIncrement = addItemsVm::incrementQuantity,
+            onQuantityDecrement = addItemsVm::decrementQuantity,
+            onCategoryChange = addItemsVm::onCategoryChange,
+            onApplySuggestion = addItemsVm::applySuggestion,
+            onAddRemainder = { addItemsVm.addRemainderAsItem() },
+            onSave = addItemsVm::save,
+        )
+
+        Screen.Scan -> ScanReceiptScreen(
+            onResult = { receipt ->
+                addItemsVm.startFromReceipt(receipt)
+                screen = Screen.AddItems
+            },
+            onManualInstead = {
+                addItemsVm.startManual()
+                screen = Screen.AddItems
+            },
+            onClose = { screen = Screen.Tabs },
+        )
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun TabsScreen(
+    container: AppContainer,
+    settings: AppSettings,
+    onCloseRequested: () -> Unit,
+    onAddItemsRequested: () -> Unit,
+    onScanRequested: () -> Unit,
+) {
+    val repository = container.expenseRepository
 
     val todayVm: TodayViewModel = viewModel(factory = viewModelFactory { TodayViewModel(repository) })
     val historyVm: HistoryViewModel = viewModel(factory = viewModelFactory { HistoryViewModel(repository) })
+    val productsVm: ProductsViewModel = viewModel(factory = viewModelFactory { ProductsViewModel(repository) })
     val analyticsVm: AnalyticsViewModel = viewModel(factory = viewModelFactory { AnalyticsViewModel(repository) })
     val settingsVm: SettingsViewModel = viewModel(
         factory = viewModelFactory { SettingsViewModel(repository, container.settingsRepository) },
@@ -108,11 +197,14 @@ private fun PoshtuchnoScaffold(
 
     var tab by rememberSaveable { mutableStateOf(Tab.Today) }
     var limitDialogVisible by remember { mutableStateOf(false) }
+    var addMenuVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val quickSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val addMenuState = rememberModalBottomSheetState()
 
     val todayState by todayVm.uiState.collectAsState()
     val historyState by historyVm.uiState.collectAsState()
+    val productsState by productsVm.uiState.collectAsState()
     val analyticsState by analyticsVm.uiState.collectAsState()
     val settingsState by settingsVm.uiState.collectAsState()
     val quickAdd by quickAddVm.state.collectAsState()
@@ -184,7 +276,7 @@ private fun PoshtuchnoScaffold(
                         },
                         label = { Text(entry.label, style = MaterialTheme.typography.labelSmall) },
                         colors = NavigationBarItemDefaults.colors(
-                            // Активная вкладка — мягкая фиолетовая пилюля.
+                            // Активная вкладка — мягкая пилюля в цвете акцента.
                             indicatorColor = MaterialTheme.colorScheme.primaryContainer,
                             selectedIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
                             selectedTextColor = MaterialTheme.colorScheme.primary,
@@ -198,7 +290,7 @@ private fun PoshtuchnoScaffold(
         floatingActionButton = {
             if (tab != Tab.Settings) {
                 FloatingActionButton(
-                    onClick = quickAddVm::open,
+                    onClick = { addMenuVisible = true },
                     shape = MaterialTheme.shapes.large,
                     containerColor = MaterialTheme.colorScheme.primary,
                     contentColor = MaterialTheme.colorScheme.onPrimary,
@@ -207,7 +299,7 @@ private fun PoshtuchnoScaffold(
                 ) {
                     Icon(
                         painter = painterResource(R.drawable.ic_add),
-                        contentDescription = "Добавить трату",
+                        contentDescription = "Добавить",
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -244,6 +336,16 @@ private fun PoshtuchnoScaffold(
                     contentPadding = listPadding,
                 )
 
+                Tab.Products -> ProductsScreen(
+                    state = productsState,
+                    onPeriodSelect = productsVm::selectPeriod,
+                    onToggleGroup = productsVm::toggleGroup,
+                    onQueryChange = productsVm::onQueryChange,
+                    onRenameGroup = productsVm::renameGroup,
+                    onHideGroup = productsVm::hideGroup,
+                    contentPadding = listPadding,
+                )
+
                 Tab.Analytics -> AnalyticsScreen(
                     state = analyticsState,
                     onPeriodSelect = analyticsVm::selectPeriod,
@@ -254,6 +356,7 @@ private fun PoshtuchnoScaffold(
                     state = settingsState,
                     onLimitClick = { limitDialogVisible = true },
                     onThemeModeChange = settingsVm::setThemeMode,
+                    onPaletteChange = settingsVm::setPalette,
                     onDynamicColorChange = settingsVm::setDynamicColor,
                     onCloseAfterSaveChange = settingsVm::setCloseAfterSave,
                     onShowKopecksChange = settingsVm::setShowKopecks,
@@ -265,9 +368,53 @@ private fun PoshtuchnoScaffold(
         }
     }
 
+    if (addMenuVisible) {
+        ModalBottomSheet(
+            onDismissRequest = { addMenuVisible = false },
+            sheetState = addMenuState,
+            shape = MaterialTheme.shapes.extraLarge,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(bottom = 20.dp),
+                verticalArrangement = Arrangement.spacedBy(2.dp),
+            ) {
+                AddOption(
+                    icon = R.drawable.ic_add,
+                    title = "Быстрая трата",
+                    subtitle = "Сумма и категория — пара секунд",
+                    onClick = {
+                        addMenuVisible = false
+                        quickAddVm.open()
+                    },
+                )
+                AddOption(
+                    icon = R.drawable.ic_scan,
+                    title = "Сканировать чек",
+                    subtitle = "Дата, сумма и реквизиты из QR-кода",
+                    onClick = {
+                        addMenuVisible = false
+                        onScanRequested()
+                    },
+                )
+                AddOption(
+                    icon = R.drawable.ic_tab_products,
+                    title = "Покупка по позициям",
+                    subtitle = "Разложить по товарам с подсказками",
+                    onClick = {
+                        addMenuVisible = false
+                        onAddItemsRequested()
+                    },
+                )
+            }
+        }
+    }
+
     if (quickAdd.visible) {
         QuickAddSheet(
-            sheetState = sheetState,
+            sheetState = quickSheetState,
             amount = quickAdd.amount,
             categories = quickCategories,
             selectedCategoryId = quickAdd.selectedCategoryId,
@@ -292,4 +439,32 @@ private fun PoshtuchnoScaffold(
             },
         )
     }
+}
+
+@Composable
+private fun AddOption(
+    icon: Int,
+    title: String,
+    subtitle: String,
+    onClick: () -> Unit,
+) {
+    ListItem(
+        headlineContent = { Text(title, style = MaterialTheme.typography.bodyLarge) },
+        supportingContent = {
+            Text(
+                subtitle,
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        },
+        leadingContent = {
+            Icon(
+                painter = painterResource(icon),
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(22.dp),
+            )
+        },
+        modifier = Modifier.clickable(onClick = onClick),
+    )
 }

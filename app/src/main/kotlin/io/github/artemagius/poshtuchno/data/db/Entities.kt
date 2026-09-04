@@ -38,12 +38,15 @@ data class ShopEntity(
     val longitude: Double? = null,
 )
 
+enum class UnitKind { PIECE, VOLUME, WEIGHT }
+
 @Entity(
     tableName = "product",
     indices = [
         Index(value = ["barcode"]),
         Index(value = ["canonicalName"]),
         Index(value = ["defaultCategoryId"]),
+        Index(value = ["matchKey"], unique = true),
     ],
     foreignKeys = [
         ForeignKey(
@@ -59,9 +62,64 @@ data class ProductEntity(
     val canonicalName: String,
     val brand: String? = null,
     val barcode: String? = null,
-    /** "шт", "кг", "л" — свободная строка, единицы задаёт пользователь. */
-    val unit: String? = null,
+    /**
+     * Ключ сопоставления одинаковых товаров, написанных по-разному.
+     * Считается в ProductGrouping.matchKey, уникален: повторы склеиваются
+     * в одну карточку товара вместо десятка почти одинаковых строк.
+     */
+    @ColumnInfo(defaultValue = "") val matchKey: String = "",
+    /** Нормализованные слова через пробел — по ним строятся автогруппы. */
+    @ColumnInfo(defaultValue = "") val tokens: String = "",
+    @ColumnInfo(defaultValue = "PIECE") val unitKind: UnitKind = UnitKind.PIECE,
+    /** Объём одной единицы в миллилитрах. */
+    val volumeMl: Int? = null,
+    /** Вес одной единицы в граммах. */
+    val weightG: Int? = null,
+    /** Штук в упаковке: «6x0,5л» -> 6. */
+    val packCount: Int? = null,
     val defaultCategoryId: Long? = null,
+)
+
+/**
+ * Автоматическая подкатегория: слово, которое повторяется у нескольких товаров.
+ * Создаётся приложением, но пользователь может переименовать или скрыть.
+ */
+@Entity(
+    tableName = "product_group",
+    indices = [Index(value = ["token"], unique = true)],
+)
+data class ProductGroupEntity(
+    @PrimaryKey(autoGenerate = true) val id: Long = 0,
+    /** Нормализованное слово-ключ: «энергетик». */
+    val token: String,
+    /** Отображаемое имя, по умолчанию — слово с заглавной буквы. */
+    val title: String,
+    @ColumnInfo(defaultValue = "0") val hidden: Boolean = false,
+    @ColumnInfo(defaultValue = "0") val pinned: Boolean = false,
+)
+
+@Entity(
+    tableName = "product_group_member",
+    primaryKeys = ["groupId", "productId"],
+    indices = [Index(value = ["productId"])],
+    foreignKeys = [
+        ForeignKey(
+            entity = ProductGroupEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["groupId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+        ForeignKey(
+            entity = ProductEntity::class,
+            parentColumns = ["id"],
+            childColumns = ["productId"],
+            onDelete = ForeignKey.CASCADE,
+        ),
+    ],
+)
+data class ProductGroupMember(
+    val groupId: Long,
+    val productId: Long,
 )
 
 @Entity(

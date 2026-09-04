@@ -11,6 +11,7 @@ enum class Tab(
 ) {
     Today("today", "Сегодня", R.drawable.ic_tab_today),
     History("history", "История", R.drawable.ic_tab_history),
+    Products("products", "Товары", R.drawable.ic_tab_products),
     Analytics("analytics", "Аналитика", R.drawable.ic_tab_analytics),
-    Settings("settings", "Настройки", R.drawable.ic_tab_settings),
+    Settings("settings", "Ещё", R.drawable.ic_tab_settings),
 }
