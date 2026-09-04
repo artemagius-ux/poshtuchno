@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -14,6 +16,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.SheetState
+import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -23,11 +27,13 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import io.github.artemagius.poshtuchno.data.Money
 import io.github.artemagius.poshtuchno.data.ThemeMode
 import io.github.artemagius.poshtuchno.data.db.CategoryEntity
+import io.github.artemagius.poshtuchno.data.db.ProductSuggestion
 import io.github.artemagius.poshtuchno.ui.components.CategoryPicker
 import io.github.artemagius.poshtuchno.ui.theme.PoshtuchnoTheme
 
@@ -52,8 +58,10 @@ fun QuickAddSheet(
     onBackspace: () -> Unit,
     onCategorySelect: (Long) -> Unit,
     onNoteChange: (String) -> Unit,
+    onApplySuggestion: (ProductSuggestion) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
+    suggestions: List<ProductSuggestion> = emptyList(),
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismiss,
@@ -81,7 +89,9 @@ fun QuickAddSheet(
             OutlinedTextField(
                 value = note,
                 onValueChange = onNoteChange,
-                placeholder = { Text("Заметка (необязательно)") },
+                // Название, а не «заметка»: по нему товар попадает в группы,
+                // и это стоит объяснить подписью, а не оставлять догадками.
+                placeholder = { Text("Что купил (необязательно)") },
                 singleLine = true,
                 shape = MaterialTheme.shapes.small,
                 colors = TextFieldDefaults.colors(
@@ -94,6 +104,10 @@ fun QuickAddSheet(
                 ),
                 modifier = Modifier.fillMaxWidth(),
             )
+
+            if (suggestions.isNotEmpty()) {
+                SuggestionRow(suggestions = suggestions, onApply = onApplySuggestion)
+            }
 
             NumberPad(onDigit = onDigit, onSeparator = onSeparator, onBackspace = onBackspace)
 
@@ -153,6 +167,47 @@ private fun CategoryChips(
         columns = 4,
         maxLines = 2,
     )
+}
+
+/** Подсказки из истории: название и прошлая цена одним тапом. */
+@Composable
+private fun SuggestionRow(
+    suggestions: List<ProductSuggestion>,
+    onApply: (ProductSuggestion) -> Unit,
+) {
+    LazyRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+        items(suggestions, key = { it.id }) { suggestion ->
+            SuggestionChip(
+                onClick = { onApply(suggestion) },
+                shape = MaterialTheme.shapes.small,
+                colors = SuggestionChipDefaults.suggestionChipColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceContainer,
+                ),
+                border = null,
+                label = {
+                    Column {
+                        Text(
+                            text = suggestion.name,
+                            style = MaterialTheme.typography.labelLarge,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                        )
+                        val hint = buildList {
+                            suggestion.lastPriceKopecks?.let { add(Money.format(it)) }
+                            if (suggestion.timesBought > 1) add("×${suggestion.timesBought}")
+                        }.joinToString(" · ")
+                        if (hint.isNotEmpty()) {
+                            Text(
+                                text = hint,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                },
+            )
+        }
+    }
 }
 
 @Composable
@@ -226,6 +281,13 @@ private fun QuickAddContentPreview(amount: AmountInput, categories: List<Categor
     ) {
         AmountDisplay(amount)
         CategoryChips(categories, categories.firstOrNull()?.id) {}
+        SuggestionRow(
+            suggestions = listOf(
+                ProductSuggestion(1, "Энергетик BURN 0,449л", "Burn", 449, null, null, 1, 8, null, 11_900),
+                ProductSuggestion(2, "Молоко 1л", null, 1000, null, null, 1, 3, null, 8_990),
+            ),
+            onApply = {},
+        )
         NumberPad({}, {}, {})
         Button(onClick = {}, modifier = Modifier.fillMaxWidth()) { Text("Сохранить") }
     }

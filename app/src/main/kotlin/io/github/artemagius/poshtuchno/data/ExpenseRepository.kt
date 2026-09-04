@@ -51,17 +51,45 @@ class ExpenseRepository(private val db: PoshtuchnoDatabase) {
     fun observePurchases(range: LongRange): Flow<List<PurchaseListItem>> =
         db.purchaseDao().observeBetween(range.first, range.last + 1)
 
+    /**
+     * Быстрая трата: сумма, категория и необязательное название.
+     *
+     * Если название указано, трата идёт через тот же путь, что и покупка по
+     * позициям: создаётся карточка товара и пересчитываются группы. Иначе
+     * «Энергетик», добавленный быстрым вводом, не попадал бы во вкладку
+     * «Товары» — а с точки зрения пользователя это один и тот же товар,
+     * каким бы способом его ни записали.
+     *
+     * Без названия товара нет, поэтому пишем только сумму с категорией.
+     */
     suspend fun addQuickExpense(
         totalKopecks: Long,
         categoryId: Long?,
         note: String? = null,
         purchasedAt: Long = System.currentTimeMillis(),
-    ): Long = db.purchaseDao().insertQuickExpense(
-        purchasedAt = purchasedAt,
-        totalKopecks = totalKopecks,
-        categoryId = categoryId,
-        note = note?.trim()?.takeIf { it.isNotEmpty() },
-    )
+    ): Long {
+        val name = note?.trim()?.takeIf { it.isNotEmpty() }
+        return if (name != null) {
+            addItemizedPurchase(
+                items = listOf(
+                    NewItem(
+                        name = name,
+                        unitPriceKopecks = totalKopecks,
+                        categoryId = categoryId,
+                    ),
+                ),
+                purchasedAt = purchasedAt,
+                note = name,
+            )
+        } else {
+            db.purchaseDao().insertQuickExpense(
+                purchasedAt = purchasedAt,
+                totalKopecks = totalKopecks,
+                categoryId = categoryId,
+                note = null,
+            )
+        }
+    }
 
     /**
      * Удаляет покупку и возвращает её вместе с позициями,

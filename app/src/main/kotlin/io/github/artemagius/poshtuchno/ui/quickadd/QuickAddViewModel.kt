@@ -5,11 +5,17 @@ import androidx.lifecycle.viewModelScope
 import io.github.artemagius.poshtuchno.data.ExpenseRepository
 import io.github.artemagius.poshtuchno.data.Periods
 import io.github.artemagius.poshtuchno.data.db.CategoryEntity
+import io.github.artemagius.poshtuchno.data.db.ProductSuggestion
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -43,6 +49,21 @@ class QuickAddViewModel(private val repository: ExpenseRepository) : ViewModel()
     private val _saved = MutableStateFlow<Long?>(null)
     val saved: StateFlow<Long?> = _saved.asStateFlow()
 
+    /**
+     * Подсказки по названию: то же, что при вводе по позициям.
+     * Название в быстрой трате — это товар, поэтому подсказать прошлую цену
+     * и категорию здесь так же полезно.
+     */
+    @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
+    val suggestions: StateFlow<List<ProductSuggestion>> = _state
+        .map { it.note }
+        .debounce(180)
+        .mapLatest { text ->
+            // Пустой запрос вернул бы всю историю — на пустом поле подсказки лишние.
+            if (text.isBlank()) emptyList() else repository.productSuggestions(text, limit = 6)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     fun open() {
         _state.value = QuickAddState(
             visible = true,
@@ -61,6 +82,23 @@ class QuickAddViewModel(private val repository: ExpenseRepository) : ViewModel()
     fun onCategorySelect(id: Long) = _state.update { it.copy(selectedCategoryId = id) }
 
     fun onNoteChange(note: String) = _state.update { it.copy(note = note) }
+
+    /** Подставляет товар из истории: название, цену и категорию. */
+    fun applySuggestion(suggestion: ProductSuggestion) {
+        _state.update { current ->
+            current.copy(
+                note = suggestion.name,
+                selectedCategoryId = suggestion.categoryId ?: current.selectedCategoryId,
+                amount = if (current.amount.kopecks > 0) {
+                    current.amount
+                } else {
+                    suggestion.lastPriceKopecks
+                        ?.let { AmountInput.ofKopecks(it) }
+                        ?: current.amount
+                },
+            )
+        }
+    }
 
     fun save() {
         val current = _state.value

@@ -209,6 +209,7 @@ private fun TabsScreen(
     val settingsState by settingsVm.uiState.collectAsState()
     val quickAdd by quickAddVm.state.collectAsState()
     val quickCategories by quickAddVm.categories.collectAsState()
+    val quickSuggestions by quickAddVm.suggestions.collectAsState()
 
     // Дата пересчитывается при возврате в приложение: за ночь «сегодня» меняется.
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -384,7 +385,7 @@ private fun TabsScreen(
                 AddOption(
                     icon = R.drawable.ic_add,
                     title = "Быстрая трата",
-                    subtitle = "Сумма и категория — пара секунд",
+                    subtitle = "Сумма, категория и название — пара секунд",
                     onClick = {
                         addMenuVisible = false
                         quickAddVm.open()
@@ -424,8 +425,10 @@ private fun TabsScreen(
             onBackspace = quickAddVm::onBackspace,
             onCategorySelect = quickAddVm::onCategorySelect,
             onNoteChange = quickAddVm::onNoteChange,
+            onApplySuggestion = quickAddVm::applySuggestion,
             onSave = quickAddVm::save,
             onDismiss = quickAddVm::close,
+            suggestions = quickSuggestions,
         )
     }
 
