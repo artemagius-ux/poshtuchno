@@ -25,6 +25,7 @@ abstract class PoshtuchnoDatabase : RoomDatabase() {
     abstract fun categoryDao(): CategoryDao
     abstract fun purchaseDao(): PurchaseDao
     abstract fun productDao(): ProductDao
+    abstract fun budgetDao(): BudgetDao
     abstract fun statsDao(): StatsDao
 
     companion object {

@@ -1,6 +1,7 @@
 package io.github.artemagius.poshtuchno.data.db
 
 import androidx.room.Dao
+import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.OnConflictStrategy
 import androidx.room.Query
@@ -13,11 +14,34 @@ interface CategoryDao {
     @Query("SELECT * FROM category ORDER BY sortOrder, name")
     fun observeAll(): Flow<List<CategoryEntity>>
 
+    @Query("SELECT * FROM category ORDER BY sortOrder, name")
+    suspend fun getAll(): List<CategoryEntity>
+
     @Upsert
     suspend fun upsert(category: CategoryEntity): Long
 
+    @Insert
+    suspend fun insertAll(categories: List<CategoryEntity>)
+
     @Query("SELECT COUNT(*) FROM category")
     suspend fun count(): Int
+
+    /**
+     * Категории, которыми пользовались недавно — они идут первыми в быстром вводе.
+     * Порядок: сначала по числу использований за период, потом по свежести.
+     */
+    @Query(
+        """
+        SELECT c.* FROM category c
+        JOIN purchase_item i ON i.categoryId = c.id
+        JOIN purchase p ON p.id = i.purchaseId
+        WHERE p.purchasedAt >= :since
+        GROUP BY c.id
+        ORDER BY COUNT(i.id) DESC, MAX(p.purchasedAt) DESC
+        LIMIT :limit
+        """,
+    )
+    fun observeFrequent(since: Long, limit: Int): Flow<List<CategoryEntity>>
 }
 
 @Dao
@@ -58,6 +82,13 @@ interface PurchaseDao {
         return purchaseId
     }
 
+    /** Восстановление после удаления: покупка и её позиции возвращаются с теми же id. */
+    @Transaction
+    suspend fun restore(purchase: PurchaseEntity, items: List<PurchaseItemEntity>) {
+        insert(purchase)
+        insertItems(items)
+    }
+
     @Query(
         """
         SELECT COALESCE(SUM(totalKopecks), 0) FROM purchase
@@ -66,8 +97,37 @@ interface PurchaseDao {
     )
     fun observeTotalBetween(fromInclusive: Long, toExclusive: Long): Flow<Long>
 
-    @Query("SELECT * FROM purchase ORDER BY purchasedAt DESC LIMIT :limit")
-    fun observeRecent(limit: Int): Flow<List<PurchaseEntity>>
+    @Query(
+        """
+        SELECT p.id AS id,
+               p.purchasedAt AS purchasedAt,
+               p.totalKopecks AS totalKopecks,
+               p.note AS note,
+               s.name AS shopName,
+               (SELECT COUNT(*) FROM purchase_item i WHERE i.purchaseId = p.id) AS itemCount,
+               (
+                   SELECT c.name FROM purchase_item i
+                   LEFT JOIN category c ON c.id = i.categoryId
+                   WHERE i.purchaseId = p.id
+                   ORDER BY i.sumKopecks DESC
+                   LIMIT 1
+               ) AS topCategoryName
+        FROM purchase p
+        LEFT JOIN shop s ON s.id = p.shopId
+        ORDER BY p.purchasedAt DESC, p.id DESC
+        LIMIT :limit
+        """,
+    )
+    fun observeRecent(limit: Int): Flow<List<PurchaseListItem>>
+
+    @Query("SELECT * FROM purchase WHERE id = :id")
+    suspend fun getById(id: Long): PurchaseEntity?
+
+    @Query("SELECT * FROM purchase_item WHERE purchaseId = :purchaseId")
+    suspend fun itemsOf(purchaseId: Long): List<PurchaseItemEntity>
+
+    @Delete
+    suspend fun delete(purchase: PurchaseEntity)
 
     @Query("DELETE FROM purchase WHERE id = :id")
     suspend fun deleteById(id: Long)
@@ -116,6 +176,21 @@ interface ProductDao {
 }
 
 @Dao
+interface BudgetDao {
+    @Query("SELECT * FROM budget WHERE scope = 'TOTAL' AND period = :period LIMIT 1")
+    fun observeOverall(period: BudgetPeriod = BudgetPeriod.MONTH): Flow<BudgetEntity?>
+
+    @Query("SELECT * FROM budget WHERE scope = 'TOTAL' AND period = :period LIMIT 1")
+    suspend fun getOverall(period: BudgetPeriod = BudgetPeriod.MONTH): BudgetEntity?
+
+    @Upsert
+    suspend fun upsert(budget: BudgetEntity): Long
+
+    @Query("DELETE FROM budget WHERE scope = 'TOTAL' AND period = :period")
+    suspend fun clearOverall(period: BudgetPeriod = BudgetPeriod.MONTH)
+}
+
+@Dao
 interface StatsDao {
     @Query(
         """
@@ -148,4 +223,15 @@ data class CategoryTotal(
     val categoryId: Long?,
     val categoryName: String?,
     val totalKopecks: Long,
+)
+
+/** Проекция для списка на главном экране. */
+data class PurchaseListItem(
+    val id: Long,
+    val purchasedAt: Long,
+    val totalKopecks: Long,
+    val note: String?,
+    val shopName: String?,
+    val itemCount: Int,
+    val topCategoryName: String?,
 )
